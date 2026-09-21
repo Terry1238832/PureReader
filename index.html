@@ -126,6 +126,78 @@
   #guide-link:hover,
   #guide-link:focus-visible { opacity: 0.7; }
 
+  #guide {
+    position: fixed;
+    inset: 0;
+    z-index: 7;
+    display: grid;
+    place-items: center;
+    padding: 28px 18px;
+    background: color-mix(in srgb, var(--bg) 62%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  #guide-panel {
+    position: relative;
+    width: min(620px, 100%);
+    max-height: min(78vh, 720px);
+    overflow: auto;
+    padding: 34px 40px 28px;
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
+    box-shadow: 0 18px 48px color-mix(in srgb, var(--fg) 5%, transparent);
+    font-size: 17px;
+    line-height: 1.85;
+    letter-spacing: 0.01em;
+    scrollbar-width: none;
+  }
+  #guide-panel::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+  #guide-title {
+    margin: 0 0 1.15em;
+    font-size: 22px;
+    line-height: 1.4;
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+
+  #guide-panel h2 {
+    margin: 1.7em 0 0.45em;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    opacity: 0.45;
+  }
+
+  #guide-panel p { margin: 0 0 0.9em; }
+
+  #guide-panel ul {
+    list-style: none;
+    margin: 0 0 1em;
+    padding: 0;
+  }
+
+  #guide-panel li {
+    display: grid;
+    grid-template-columns: 6.4em 1fr;
+    gap: 0.5em;
+    margin: 0.08em 0;
+  }
+
+  #guide-panel li span:first-child { opacity: 0.48; }
+
+  #guide-close {
+    position: sticky;
+    top: 0;
+    float: right;
+    margin: -6px 0 0;
+    letter-spacing: 0.14em;
+    font-size: 13px;
+    opacity: 0.4;
+  }
+  #guide-close:hover,
+  #guide-close:focus-visible { opacity: 0.8; }
+
   /* 滚动发生在这一层，遮罩相对视口而不是整篇文章 */
   #scroller {
     position: fixed;
@@ -322,6 +394,8 @@
     #doc-name { flex: 1 1 100%; }
     .chrome-actions { width: 100%; justify-content: space-between; gap: 12px; }
     .width-control { display: none; }
+    #guide-panel { padding: 28px 22px 22px; }
+    #guide-panel li { grid-template-columns: 5.4em 1fr; }
     #progress { right: 14px; bottom: 12px; }
     input[type="range"] { width: 72px; }
   }
@@ -340,7 +414,34 @@
         <span class="hint-drop">松开以开始阅读</span>
       </span>
     </button>
-    <a id="guide-link" href="guide.html">说明</a>
+    <button type="button" id="guide-link">说明</button>
+  </div>
+
+  <div id="guide" hidden>
+    <div id="guide-panel" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+      <button type="button" id="guide-close">关闭</button>
+      <p id="guide-title">说明</p>
+      <p>把一篇文字放进来。页眉、页脚和单独一行的页码会被拿掉，只留下可以长时间读的正文。</p>
+      <p>文字自己缓慢上移。眼睛停在屏幕中央，靠近上下边缘的句子会慢慢变淡。</p>
+      <h2>打开</h2>
+      <p>拖入 PDF 或 TXT，或点击页面选择。按 O 也可以。</p>
+      <h2>键盘</h2>
+      <ul>
+        <li><span>空格</span><span>暂停或继续</span></li>
+        <li><span>↑ ↓</span><span>上一段，下一段</span></li>
+        <li><span>← →</span><span>放慢，加快</span></li>
+        <li><span>+ −</span><span>同样是加快，放慢</span></li>
+        <li><span>Home</span><span>第一段</span></li>
+        <li><span>End</span><span>最后一段</span></li>
+        <li><span>F</span><span>全屏</span></li>
+        <li><span>Esc</span><span>关闭说明，或隐藏控制栏</span></li>
+      </ul>
+      <p>双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。</p>
+      <p>鼠标移到页面最上方，可以改速度、字号和宽度。右下角很淡的数字，是现在读到哪里。</p>
+      <h2>文件</h2>
+      <p>文字只在这台浏览器里打开，不会上传。刷新后会记住速度、字号、宽度，以及同一个文件名的阅读位置。文件本身不会被保存。</p>
+      <p>整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
+    </div>
   </div>
 
   <div id="status" hidden role="status" aria-live="polite">
@@ -1389,8 +1490,27 @@
     }, CURSOR_HIDE);
   }
 
+  function openGuide() {
+    document.getElementById("guide").hidden = false;
+  }
+
+  function closeGuide() {
+    document.getElementById("guide").hidden = true;
+  }
+
+  function guideOpen() {
+    return !document.getElementById("guide").hidden;
+  }
+
   function onKey(e) {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (guideOpen()) {
+      if (e.code === "Escape") {
+        e.preventDefault();
+        closeGuide();
+      }
+      return;
+    }
     const inChrome = document.activeElement && chrome.contains(document.activeElement);
     if (inChrome && e.code !== "Escape" && e.code !== "KeyO" && e.code !== "KeyF") return;
 
@@ -1448,6 +1568,11 @@
   }
 
   function bind() {
+    document.getElementById("guide-link").addEventListener("click", openGuide);
+    document.getElementById("guide-close").addEventListener("click", closeGuide);
+    document.getElementById("guide").addEventListener("click", function (e) {
+      if (e.target === this) closeGuide();
+    });
     document.getElementById("landing-open").addEventListener("click", openFilePicker);
     document.getElementById("btn-open").addEventListener("click", openFilePicker);
     statusAction.addEventListener("click", openFilePicker);
