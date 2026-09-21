@@ -70,8 +70,14 @@
     background: var(--bg);
   }
 
-  #landing-open {
+  #landing-center {
     transform: translateY(-6vh);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #landing-open {
     text-align: center;
   }
 
@@ -109,6 +115,114 @@
   }
 
   #status-action { margin-top: 18px; }
+
+  #landing-history {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    max-width: 18em;
+  }
+  #landing-history button {
+    max-width: 100%;
+    font-size: 14px;
+    line-height: 1.7;
+    letter-spacing: 0.02em;
+    opacity: 0.36;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #landing-history button:hover,
+  #landing-history button:focus-visible { opacity: 0.8; }
+
+  #landing-lang {
+    position: fixed;
+    z-index: 6;
+    top: 16px;
+    right: 22px;
+  }
+  body.is-reading #landing-lang { display: none; }
+
+  .lang-switch {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    opacity: 0.55;
+  }
+  .lang-switch span[data-lang] { opacity: 0.38; }
+  .lang-switch span[data-lang].is-active { opacity: 1; }
+  .lang-switch:hover, .lang-switch:focus-visible { opacity: 0.9; }
+
+  #btn-play, #btn-full {
+    width: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #btn-play svg, #btn-full svg { width: 16px; height: 16px; display: block; }
+  #btn-play .icon-play, #btn-full .icon-exit { display: none; }
+  #btn-play.is-paused .icon-pause { display: none; }
+  #btn-play.is-paused .icon-play { display: block; }
+  #btn-full.is-full .icon-enter { display: none; }
+  #btn-full.is-full .icon-exit { display: block; }
+
+  #history {
+    position: fixed;
+    z-index: 8;
+    top: 54px;
+    right: 28px;
+    width: min(280px, calc(100% - 40px));
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity 0.28s ease, transform 0.28s ease, visibility 0s linear 0.28s;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
+  }
+  #history.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    pointer-events: auto;
+    transition: opacity 0.28s ease, transform 0.28s ease, visibility 0s;
+  }
+  #history-panel {
+    max-height: min(46vh, 320px);
+    overflow: auto;
+    padding: 6px 0;
+    background: color-mix(in srgb, var(--bg) 96%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 16px 40px color-mix(in srgb, var(--fg) 6%, transparent);
+    scrollbar-width: none;
+  }
+  #history-panel::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  #history-panel button,
+  #history-panel p {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 8px 16px;
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.45;
+    opacity: 0.72;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #history-panel button:hover,
+  #history-panel button:focus-visible { opacity: 1; }
+  #history-panel p { opacity: 0.42; }
+
+  #guide-author {
+    margin: 1.8em 0 0.2em;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    opacity: 0.4;
+  }
 
   body.is-drag .hint-idle { display: none; }
   body.is-drag .hint-drop { display: inline; }
@@ -399,7 +513,7 @@
     padding: 0;
     opacity: 0.72;
     cursor: pointer;
-    max-width: 4.5em;
+    max-width: 6.2em;
   }
   #font-family:hover,
   #font-family:focus-visible { opacity: 1; }
@@ -425,57 +539,67 @@
     #guide-panel { padding: 28px 22px 22px; }
     #guide-panel li { grid-template-columns: 5.4em 1fr; }
     #guide { left: 14px; bottom: 42px; width: min(420px, calc(100% - 28px)); }
+    #history { right: 14px; top: 72px; }
+    #landing-lang { right: 14px; top: 12px; }
     #guide-link { left: 14px; bottom: 14px; }
     #progress { right: 14px; bottom: 12px; }
     input[type="range"] { width: 72px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    #chrome, #guide { transition: none; }
+    #chrome, #guide, #history { transition: none; }
   }
 </style>
 </head>
 <body>
+  <button type="button" id="landing-lang" class="lang-switch" data-i18n-aria="langLabel">
+    <span data-lang="zh">中</span><span> / </span><span data-lang="en">EN</span>
+  </button>
+
   <div id="landing">
-    <button type="button" id="landing-open">
-      <span class="landing-title">打开一段文字</span>
-      <span class="landing-hint">
-        <span class="hint-idle">拖入 PDF / TXT<br>或点击选择文件</span>
-        <span class="hint-drop">松开以开始阅读</span>
-      </span>
-    </button>
+    <div id="landing-center">
+      <button type="button" id="landing-open">
+        <span class="landing-title" data-i18n="openText">打开一段文字</span>
+        <span class="landing-hint">
+          <span class="hint-idle" data-i18n-html="hintIdle">拖入 PDF / TXT<br>或点击选择文件</span>
+          <span class="hint-drop" data-i18n="hintDrop">松开以开始阅读</span>
+        </span>
+      </button>
+      <div id="landing-history" hidden></div>
+    </div>
   </div>
 
   <div id="guide">
     <div id="guide-panel" role="dialog" aria-modal="true" aria-labelledby="guide-title">
-      <button type="button" id="guide-close">关闭</button>
-      <p id="guide-title">说明</p>
-      <p>把一篇文字放进来。页眉、页脚和单独一行的页码会被拿掉，只留下可以长时间读的正文。</p>
-      <p>文字自己缓慢上移。眼睛停在屏幕中央，靠近上下边缘的句子会慢慢变淡。</p>
-      <h2>打开</h2>
-      <p>拖入 PDF 或 TXT，或点击页面选择。按 O 也可以。</p>
-      <h2>键盘</h2>
+      <button type="button" id="guide-close" data-i18n="guideClose">关闭</button>
+      <p id="guide-title" data-i18n="guideTitle">说明</p>
+      <p data-i18n="guideLead">把一篇文字放进来。页眉、页脚和单独一行的页码会被拿掉，只留下可以长时间读的正文。</p>
+      <p data-i18n="guideFocus">文字自己缓慢上移。眼睛停在屏幕中央，靠近上下边缘的句子会慢慢变淡。</p>
+      <h2 data-i18n="guideOpenH">打开</h2>
+      <p data-i18n="guideOpen">拖入 PDF 或 TXT，或点击页面选择。按 O 也可以。最近读过的会出现在首页，也可以从顶部的历史里再打开。</p>
+      <h2 data-i18n="keysH">键盘</h2>
       <ul>
-        <li><span>空格</span><span>暂停或继续</span></li>
-        <li><span>↑ ↓</span><span>上一段，下一段</span></li>
-        <li><span>← →</span><span>放慢，加快</span></li>
-        <li><span>+ −</span><span>同样是加快，放慢</span></li>
-        <li><span>Home</span><span>第一段</span></li>
-        <li><span>End</span><span>最后一段</span></li>
-        <li><span>F</span><span>全屏</span></li>
-        <li><span>Esc</span><span>关闭说明，或隐藏控制栏</span></li>
+        <li><span>空格</span><span data-i18n="keySpace">暂停或继续</span></li>
+        <li><span>↑ ↓</span><span data-i18n="keyUp">上一段，下一段</span></li>
+        <li><span>← →</span><span data-i18n="keyLR">放慢，加快</span></li>
+        <li><span>+ −</span><span data-i18n="keyPlus">同样是加快，放慢</span></li>
+        <li><span>Home</span><span data-i18n="keyHome">第一段</span></li>
+        <li><span>End</span><span data-i18n="keyEnd">最后一段</span></li>
+        <li><span>F</span><span data-i18n="keyF">全屏</span></li>
+        <li><span>Esc</span><span data-i18n="keyEsc">关闭说明，或隐藏控制栏</span></li>
       </ul>
-      <p>双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。</p>
-      <p>鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字，是现在读到哪里。</p>
-      <h2>文件</h2>
-      <p>文字只在这台浏览器里打开，不会上传。刷新后会记住速度、字号、字体、宽度，以及同一个文件名的阅读位置。文件本身不会被保存。</p>
-      <p>整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
+      <p data-i18n="guideMouse">双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。</p>
+      <p data-i18n="guideChrome">鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字，是现在读到哪里。</p>
+      <h2 data-i18n="filesH">文件</h2>
+      <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
+      <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
+      <p id="guide-author" data-i18n="author">作者　粮宇</p>
     </div>
   </div>
 
   <div id="status" hidden role="status" aria-live="polite">
-    <p id="status-text">正在整理文字…</p>
-    <button type="button" id="status-action" hidden>重新选择</button>
+    <p id="status-text" data-i18n="preparing">正在整理文字…</p>
+    <button type="button" id="status-action" data-i18n="retry" hidden>重新选择</button>
   </div>
 
   <div id="scroller" hidden>
@@ -484,7 +608,7 @@
 
   <div id="focus-line" hidden></div>
   <div id="progress" hidden>0%</div>
-  <button type="button" id="guide-link" aria-label="说明">
+  <button type="button" id="guide-link" data-i18n-aria="guide" aria-label="说明">
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.25"></circle>
       <circle cx="12" cy="8.1" r="0.95" fill="currentColor"></circle>
@@ -495,30 +619,52 @@
   <header id="chrome" hidden>
     <div id="doc-name"></div>
     <div class="chrome-actions">
-      <button type="button" id="btn-open">打开</button>
-      <button type="button" id="btn-play">暂停</button>
+      <button type="button" id="btn-open" data-i18n="open">打开</button>
+      <button type="button" id="btn-history" data-i18n="history">历史</button>
+      <button type="button" id="btn-play" class="is-paused" data-i18n-aria="pause" aria-label="暂停">
+        <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 5.5v13M16 5.5v13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
+        </svg>
+        <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8.5 6.2v11.6L17.8 12z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"></path>
+        </svg>
+      </button>
       <label class="slider">
-        <span>慢</span>
-        <input id="speed" type="range" min="5" max="80" step="1" value="22" aria-label="滚动速度">
-        <span>快</span>
+        <span data-i18n="slow">慢</span>
+        <input id="speed" type="range" min="5" max="80" step="1" value="22" data-i18n-aria="speedLabel" aria-label="滚动速度">
+        <span data-i18n="fast">快</span>
       </label>
       <span class="type-size">
-        <button type="button" id="font-dec" aria-label="减小字号">A−</button>
-        <button type="button" id="font-inc" aria-label="增大字号">A+</button>
+        <button type="button" id="font-dec" data-i18n-aria="smaller" aria-label="减小字号">A−</button>
+        <button type="button" id="font-inc" data-i18n-aria="larger" aria-label="增大字号">A+</button>
       </span>
-      <select id="font-family" aria-label="字体">
-        <option value="song">宋体</option>
-        <option value="hei">黑体</option>
-        <option value="kai">楷体</option>
-        <option value="georgia">Georgia</option>
+      <select id="font-family" data-i18n-aria="fontLabel" aria-label="字体">
+        <option value="song" data-i18n="fontSong">宋体</option>
+        <option value="hei" data-i18n="fontHei">黑体</option>
+        <option value="kai" data-i18n="fontKai">楷体</option>
+        <option value="georgia" data-i18n="fontGeorgia">Georgia</option>
       </select>
-      <label class="slider width-control" title="阅读宽度">
-        <span>宽</span>
-        <input id="measure" type="range" min="600" max="840" step="20" value="720" aria-label="阅读宽度">
+      <label class="slider width-control" data-i18n-title="widthLabel" title="阅读宽度">
+        <span data-i18n="wide">宽</span>
+        <input id="measure" type="range" min="600" max="840" step="20" value="720" data-i18n-aria="widthLabel" aria-label="阅读宽度">
       </label>
-      <button type="button" id="btn-full">全屏</button>
+      <button type="button" id="btn-full" data-i18n-aria="full" aria-label="全屏">
+        <svg class="icon-enter" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 4H4v4M16 4h4v4M8 20H4v-4M16 20h4v-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+        <svg class="icon-exit" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+      <button type="button" id="btn-lang" class="lang-switch" data-i18n-aria="langLabel">
+        <span data-lang="zh">中</span><span> / </span><span data-lang="en">EN</span>
+      </button>
     </div>
   </header>
+
+  <div id="history">
+    <div id="history-panel"></div>
+  </div>
 
   <input id="file" type="file" accept=".pdf,.txt,text/plain,application/pdf" hidden>
 
@@ -576,6 +722,7 @@
     speed: SPEED_DEFAULT,
     fontSize: narrowScreen ? 19 : 21,
     font: "song",
+    lang: "zh",
     measure: MEASURE_DEFAULT,
     playing: true,
     active: 0,
@@ -597,6 +744,7 @@
   let selecting = false;
   let pdfjsPromise = null;
   let openJob = 0;
+  let historyItems = [];
 
   function clamp(n, min, max) {
     return Math.min(max, Math.max(min, n));
@@ -611,6 +759,7 @@
       if (raw.speed) state.speed = clamp(Number(raw.speed) || SPEED_DEFAULT, SPEED_MIN, SPEED_MAX);
       if (raw.fontSize) state.fontSize = clamp(Number(raw.fontSize) || state.fontSize, FONT_MIN, FONT_MAX);
       if (raw.font && FONTS[raw.font]) state.font = raw.font;
+      if (raw.lang === "en" || raw.lang === "zh") state.lang = raw.lang;
       if (raw.measure) state.measure = clamp(Number(raw.measure) || MEASURE_DEFAULT, MEASURE_MIN, MEASURE_MAX);
     } catch (err) {
       state.store = { files: {} };
@@ -621,6 +770,7 @@
     state.store.speed = state.speed;
     state.store.fontSize = state.fontSize;
     state.store.font = state.font;
+    state.store.lang = state.lang;
     state.store.measure = state.measure;
     try { localStorage.setItem(STORE_KEY, JSON.stringify(state.store)); } catch (err) {}
   }
@@ -648,6 +798,161 @@
     speedInput.title = state.speed + " px/s";
   }
 
+  const I18N = {
+    zh: {
+      appTitle: "阅读",
+      openText: "打开一段文字",
+      hintIdle: "拖入 PDF / TXT<br>或点击选择文件",
+      hintDrop: "松开以开始阅读",
+      guideTitle: "说明",
+      guideClose: "关闭",
+      guide: "说明",
+      guideLead: "把一篇文字放进来。页眉、页脚和单独一行的页码会被拿掉，只留下可以长时间读的正文。",
+      guideFocus: "文字自己缓慢上移。眼睛停在屏幕中央，靠近上下边缘的句子会慢慢变淡。",
+      guideOpenH: "打开",
+      guideOpen: "拖入 PDF 或 TXT，或点击页面选择。按 O 也可以。最近读过的会出现在首页，也可以从顶部的历史里再打开。",
+      keysH: "键盘",
+      keySpace: "暂停或继续",
+      keyUp: "上一段，下一段",
+      keyLR: "放慢，加快",
+      keyPlus: "同样是加快，放慢",
+      keyHome: "第一段",
+      keyEnd: "最后一段",
+      keyF: "全屏",
+      keyEsc: "关闭说明，或隐藏控制栏",
+      guideMouse: "双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。",
+      guideChrome: "鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字，是现在读到哪里。",
+      filesH: "文件",
+      guideFiles: "文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。",
+      guidePdf: "整理 PDF 时会从网络加载解析组件。TXT 不需要网络。",
+      author: "作者　粮宇",
+      open: "打开",
+      history: "历史",
+      historyEmpty: "还没有打开过",
+      slow: "慢",
+      fast: "快",
+      wide: "宽",
+      fontSong: "宋体",
+      fontHei: "黑体",
+      fontKai: "楷体",
+      fontGeorgia: "Georgia",
+      pause: "暂停",
+      resume: "继续",
+      full: "全屏",
+      exitFull: "退出全屏",
+      smaller: "减小字号",
+      larger: "增大字号",
+      speedLabel: "滚动速度",
+      widthLabel: "阅读宽度",
+      fontLabel: "字体",
+      langLabel: "语言",
+      preparing: "正在整理文字…",
+      pageProgress: "正在整理第 {i} / {n} 页…",
+      needFile: "请打开 PDF 或 TXT 文件",
+      emptyPdf: "没有提取到文字。这份 PDF 可能是扫描件。",
+      emptyTxt: "没有可读的文字。",
+      locked: "这份 PDF 有密码，无法在本地打开。",
+      badPdf: "无法读取这份 PDF。请检查网络后重试，TXT 不需要网络。",
+      badFile: "无法读取这个文件。",
+      untitled: "未命名",
+      historyMissing: "这份文件已经不在这台浏览器里。",
+      retry: "重新选择"
+    },
+    en: {
+      appTitle: "Read",
+      openText: "Open a text",
+      hintIdle: "Drop a PDF or TXT<br>or click to choose",
+      hintDrop: "Release to start reading",
+      guideTitle: "Guide",
+      guideClose: "Close",
+      guide: "Guide",
+      guideLead: "Bring in a piece of writing. Headers, footers, and page numbers on a line of their own are taken away.",
+      guideFocus: "The words drift slowly upward. Your eyes stay at the center, and lines near the edges fade.",
+      guideOpenH: "Open",
+      guideOpen: "Drop a PDF or TXT, or click to choose. O does the same. Recent texts stay on the first page, and under History at the top.",
+      keysH: "Keys",
+      keySpace: "Pause or continue",
+      keyUp: "Previous paragraph, next paragraph",
+      keyLR: "Slower, faster",
+      keyPlus: "The same: faster, slower",
+      keyHome: "First paragraph",
+      keyEnd: "Last paragraph",
+      keyF: "Full screen",
+      keyEsc: "Close the guide, or hide the controls",
+      guideMouse: "Double-click the text to pause or continue. The wheel lets auto-scroll step aside for a moment.",
+      guideChrome: "Move the pointer to the top to change speed, size, typeface, and width, or to go full screen. In Chrome, an install icon appears at the right of the address bar. The faint number at the lower right is how far you have read.",
+      filesH: "Files",
+      guideFiles: "The text stays in this browser and is not uploaded. Recently opened files can be opened again. Speed, size, typeface, width, and reading position are remembered.",
+      guidePdf: "Reading a PDF loads a parser from the network. TXT does not.",
+      author: "Author　粮宇",
+      open: "Open",
+      history: "History",
+      historyEmpty: "Nothing opened yet",
+      slow: "Slow",
+      fast: "Fast",
+      wide: "Wide",
+      fontSong: "Song",
+      fontHei: "Sans",
+      fontKai: "Kai",
+      fontGeorgia: "Georgia",
+      pause: "Pause",
+      resume: "Continue",
+      full: "Full screen",
+      exitFull: "Exit full screen",
+      smaller: "Decrease size",
+      larger: "Increase size",
+      speedLabel: "Scroll speed",
+      widthLabel: "Measure",
+      fontLabel: "Typeface",
+      langLabel: "Language",
+      preparing: "Gathering the text…",
+      pageProgress: "Gathering page {i} / {n}…",
+      needFile: "Open a PDF or TXT file",
+      emptyPdf: "No text found. This PDF may be a scan.",
+      emptyTxt: "No readable text.",
+      locked: "This PDF is locked with a password.",
+      badPdf: "Could not read this PDF. Check the network and try again. TXT needs no network.",
+      badFile: "Could not read this file.",
+      untitled: "Untitled",
+      historyMissing: "This file is no longer on this browser.",
+      retry: "Choose again"
+    }
+  };
+
+  function t(key) {
+    const pack = I18N[state.lang] || I18N.zh;
+    return pack[key] || I18N.zh[key] || "";
+  }
+
+  function applyLang() {
+    document.documentElement.lang = state.lang === "en" ? "en" : "zh-CN";
+    document.querySelectorAll("[data-i18n]").forEach(function (el) {
+      el.textContent = t(el.getAttribute("data-i18n"));
+    });
+    document.querySelectorAll("[data-i18n-html]").forEach(function (el) {
+      el.innerHTML = t(el.getAttribute("data-i18n-html"));
+    });
+    document.querySelectorAll("[data-i18n-aria]").forEach(function (el) {
+      el.setAttribute("aria-label", t(el.getAttribute("data-i18n-aria")));
+    });
+    document.querySelectorAll("[data-i18n-title]").forEach(function (el) {
+      el.title = t(el.getAttribute("data-i18n-title"));
+    });
+    document.querySelectorAll(".lang-switch [data-lang]").forEach(function (el) {
+      el.classList.toggle("is-active", el.getAttribute("data-lang") === state.lang);
+    });
+    if (state.mode !== "reading") document.title = t("appTitle");
+    updatePlayButton();
+    updateFullscreenButton();
+    renderHistory();
+  }
+
+  function toggleLang() {
+    state.lang = state.lang === "en" ? "zh" : "en";
+    persist();
+    applyLang();
+  }
+
   function setStatus(message, withAction) {
     statusText.textContent = message;
     statusAction.hidden = !withAction;
@@ -660,7 +965,7 @@
     state.playing = false;
     state.anim = null;
     document.body.classList.remove("is-reading", "cursor-hidden");
-    document.title = "阅读";
+    document.title = t("appTitle");
     landing.hidden = false;
     statusEl.hidden = true;
     scroller.hidden = true;
@@ -1179,7 +1484,7 @@
 
     const pageLines = [];
     for (let i = 1; i <= pdf.numPages; i++) {
-      statusText.textContent = "正在整理第 " + i + " / " + pdf.numPages + " 页…";
+      statusText.textContent = t("pageProgress").replace("{i}", String(i)).replace("{n}", String(pdf.numPages));
       await yieldFrame();
       try {
         const page = await pdf.getPage(i);
@@ -1215,7 +1520,7 @@
       }
     }
     pdf.destroy();
-    statusText.textContent = "正在整理文字…";
+    statusText.textContent = t("preparing");
     await yieldFrame();
     return linesToParagraphs([].concat.apply([], stripRunningMatter(pageLines)));
   }
@@ -1315,7 +1620,8 @@
   }
 
   function updatePlayButton() {
-    btnPlay.textContent = state.playing ? "暂停" : "继续";
+    btnPlay.classList.toggle("is-paused", !state.playing);
+    btnPlay.setAttribute("aria-label", state.playing ? t("pause") : t("resume"));
   }
 
   function maxScroll() {
@@ -1392,7 +1698,7 @@
     state.anim = null;
     state.resumeAt = 0;
     document.body.classList.add("is-reading");
-    document.title = state.fileName || "阅读";
+    document.title = state.fileName || t("appTitle");
     docName.textContent = state.fileName;
     updatePlayButton();
     landing.hidden = true;
@@ -1464,17 +1770,111 @@
     });
   }
 
-  async function handleFiles(fileList) {
-    const file = fileList && fileList[0];
-    if (!file) return;
-    const job = ++openJob;
-    if (!isPdfFile(file) && !isTxtFile(file)) {
-      setStatus("请打开 PDF 或 TXT 文件", true);
-      state.mode = "landing";
+  function historyDb() {
+    return new Promise(function (resolve, reject) {
+      const req = indexedDB.open("purereader.history", 1);
+      req.onupgradeneeded = function () {
+        if (!req.result.objectStoreNames.contains("files")) req.result.createObjectStore("files", { keyPath: "name" });
+      };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+    });
+  }
+
+  function listHistory() {
+    return historyDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        const req = db.transaction("files", "readonly").objectStore("files").getAll();
+        req.onsuccess = function () {
+          const items = (req.result || []).slice().sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+          resolve(items);
+        };
+        req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+
+  function saveHistory(name, kind, buffer) {
+    if (!name || !buffer || buffer.byteLength > 26 * 1024 * 1024) return Promise.resolve();
+    const copy = buffer.slice(0);
+    return historyDb().then(function (db) {
+      return new Promise(function (resolve) {
+        const tx = db.transaction("files", "readwrite");
+        tx.objectStore("files").put({ name: name, kind: kind, buffer: copy, at: Date.now() });
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { resolve(); };
+      });
+    }).then(function () {
+      return listHistory().then(function (items) {
+        const extra = items.slice(12);
+        if (!extra.length) return;
+        return historyDb().then(function (db) {
+          return new Promise(function (resolve) {
+            const tx = db.transaction("files", "readwrite");
+            extra.forEach(function (item) { tx.objectStore("files").delete(item.name); });
+            tx.oncomplete = function () { resolve(); };
+            tx.onerror = function () { resolve(); };
+          });
+        });
+      });
+    }).catch(function () {});
+  }
+
+  function refreshHistory() {
+    return listHistory().then(function (items) {
+      historyItems = items;
+      renderHistory();
+    }).catch(function () {
+      historyItems = [];
+      renderHistory();
+    });
+  }
+
+  function historyButton(item) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = item.name;
+    button.title = item.name;
+    button.addEventListener("click", function (e) {
+      e.stopPropagation();
+      closeHistory();
+      openStored(item.name);
+    });
+    return button;
+  }
+
+  function renderHistory() {
+    const landingList = document.getElementById("landing-history");
+    const panel = document.getElementById("history-panel");
+    landingList.replaceChildren();
+    panel.replaceChildren();
+    if (!historyItems.length) {
+      landingList.hidden = true;
+      const empty = document.createElement("p");
+      empty.textContent = t("historyEmpty");
+      panel.appendChild(empty);
       return;
     }
+    landingList.hidden = false;
+    historyItems.forEach(function (item) {
+      landingList.appendChild(historyButton(item));
+      panel.appendChild(historyButton(item));
+    });
+  }
 
-    state.fileName = file.name || "未命名";
+  function openStored(name) {
+    const known = historyItems.filter(function (item) { return item.name === name; })[0];
+    if (!known || !known.buffer) {
+      setStatus(t("historyMissing"), true);
+      return;
+    }
+    beginOpen(known.name, known.kind === "pdf" ? "pdf" : "txt", Promise.resolve(known.buffer));
+  }
+
+  function beginOpen(name, kind, bufferPromise) {
+    const job = ++openJob;
+    closeHistory();
+    state.fileName = name || t("untitled");
     state.mode = "processing";
     document.body.classList.remove("is-reading", "cursor-hidden");
     landing.hidden = true;
@@ -1482,32 +1882,38 @@
     focusLine.hidden = true;
     progressEl.hidden = true;
     chrome.hidden = true;
-    setStatus(isPdfFile(file) ? "正在整理文字…" : "正在整理文字…", false);
+    setStatus(t("preparing"), false);
 
-    try {
-      const buffer = await readBuffer(file);
-      if (job !== openJob) return;
-      let paragraphs;
-      if (isPdfFile(file)) paragraphs = await parsePdf(buffer);
-      else paragraphs = parseTxt(decodeText(buffer));
-      if (job !== openJob) return;
-      if (!paragraphs.length) {
-        const empty = isPdfFile(file)
-          ? "没有提取到文字。这份 PDF 可能是扫描件。"
-          : "没有可读的文字。";
-        setStatus(empty, true);
+    bufferPromise.then(function (buffer) {
+      if (job !== openJob) return null;
+      if (kind === "pdf") return parsePdf(buffer).then(function (paragraphs) { return { paragraphs: paragraphs, buffer: buffer }; });
+      return { paragraphs: parseTxt(decodeText(buffer)), buffer: buffer };
+    }).then(function (result) {
+      if (!result || job !== openJob) return;
+      if (!result.paragraphs.length) {
+        setStatus(kind === "pdf" ? t("emptyPdf") : t("emptyTxt"), true);
         state.mode = "landing";
         return;
       }
-      enterReading(paragraphs);
-    } catch (err) {
+      enterReading(result.paragraphs);
+      saveHistory(state.fileName, kind, result.buffer).then(refreshHistory);
+    }).catch(function (err) {
       if (job !== openJob) return;
-      const message = err && err.code === "locked"
-        ? "这份 PDF 有密码，无法在本地打开。"
-        : (isPdfFile(file) ? "无法读取这份 PDF。请检查网络后重试，TXT 不需要网络。" : "无法读取这个文件。");
+      const message = err && err.code === "locked" ? t("locked") : (kind === "pdf" ? t("badPdf") : t("badFile"));
       setStatus(message, true);
       state.mode = "landing";
+    });
+  }
+
+  function handleFiles(fileList) {
+    const file = fileList && fileList[0];
+    if (!file) return;
+    if (!isPdfFile(file) && !isTxtFile(file)) {
+      setStatus(t("needFile"), true);
+      state.mode = "landing";
+      return;
     }
+    beginOpen(file.name || t("untitled"), isPdfFile(file) ? "pdf" : "txt", readBuffer(file));
   }
 
   /* ---------- 输入 ---------- */
@@ -1525,6 +1931,7 @@
   }
 
   function scheduleChromeHide() {
+    if (historyOpen()) return;
     clearTimeout(chromeTimer);
     chromeTimer = setTimeout(hideChromeNow, CHROME_HIDE);
   }
@@ -1565,11 +1972,33 @@
   }
 
   function updateFullscreenButton() {
-    btnFull.textContent = document.fullscreenElement ? "退出" : "全屏";
+    const on = !!document.fullscreenElement;
+    btnFull.classList.toggle("is-full", on);
+    btnFull.setAttribute("aria-label", on ? t("exitFull") : t("full"));
+  }
+
+  function historyOpen() {
+    return document.getElementById("history").classList.contains("is-open");
+  }
+
+  function openHistoryPanel() {
+    document.getElementById("history").classList.add("is-open");
+    revealChrome();
+  }
+
+  function closeHistory() {
+    document.getElementById("history").classList.remove("is-open");
   }
 
   function onKey(e) {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (historyOpen()) {
+      if (e.code === "Escape") {
+        e.preventDefault();
+        closeHistory();
+      }
+      return;
+    }
     if (guideOpen()) {
       if (e.code === "Escape") {
         e.preventDefault();
@@ -1647,6 +2076,20 @@
     });
     document.getElementById("landing-open").addEventListener("click", openFilePicker);
     document.getElementById("btn-open").addEventListener("click", openFilePicker);
+    document.getElementById("btn-history").addEventListener("click", function () {
+      if (historyOpen()) closeHistory();
+      else openHistoryPanel();
+    });
+    document.querySelectorAll(".lang-switch").forEach(function (button) {
+      button.addEventListener("click", toggleLang);
+    });
+    document.addEventListener("pointerdown", function (e) {
+      const panel = document.getElementById("history");
+      const button = document.getElementById("btn-history");
+      if (!panel.classList.contains("is-open")) return;
+      if (panel.contains(e.target) || button.contains(e.target)) return;
+      closeHistory();
+    });
     statusAction.addEventListener("click", openFilePicker);
     btnPlay.addEventListener("click", togglePlay);
     document.getElementById("font-dec").addEventListener("click", function () { changeFont(-1); });
@@ -1687,7 +2130,7 @@
         if (e.clientY > 96) state.chromeForcedOff = false;
         return;
       }
-      if (e.clientY <= 80 || chrome.contains(e.target)) revealChrome();
+      if (historyOpen() || e.clientY <= 80 || chrome.contains(e.target)) revealChrome();
       else scheduleChromeHide();
     }, { passive: true });
 
@@ -1750,8 +2193,10 @@
 
   loadStore();
   applyTypography();
+  applyLang();
   bind();
   showLanding();
+  refreshHistory();
 })();
 </script>
 </body>
