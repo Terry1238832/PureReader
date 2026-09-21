@@ -19,6 +19,7 @@
     --measure: 720px;
     --font: 21px;
     --leading: 1.9;
+    --reading-font: "Songti SC", "Noto Serif SC", STSong, "Source Han Serif SC", "Noto Serif CJK SC", PMingLiU, serif;
     --chrome: color-mix(in srgb, var(--bg) 76%, transparent);
     color-scheme: light;
   }
@@ -49,7 +50,7 @@
     -webkit-text-size-adjust: 100%;
   }
 
-  button, input { font: inherit; color: inherit; }
+  button, input, select { font: inherit; color: inherit; }
   button {
     background: none;
     border: 0;
@@ -117,21 +118,33 @@
     z-index: 6;
     left: 18px;
     bottom: 16px;
+    width: 22px;
+    height: 22px;
     color: inherit;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
-    font-size: 12px;
-    letter-spacing: 0.12em;
-    opacity: 0.32;
+    opacity: 0.34;
   }
+  #guide-link svg { display: block; width: 22px; height: 22px; }
   #guide-link:hover,
-  #guide-link:focus-visible { opacity: 0.75; }
+  #guide-link:focus-visible { opacity: 0.8; }
 
   #guide {
     position: fixed;
     z-index: 7;
     left: 18px;
-    bottom: 44px;
+    bottom: 48px;
     width: min(420px, calc(100% - 36px));
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: opacity 0.32s ease, transform 0.32s ease, visibility 0s linear 0.32s;
+  }
+  #guide.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    pointer-events: auto;
+    transition: opacity 0.32s ease, transform 0.32s ease, visibility 0s;
   }
 
   #guide-panel {
@@ -235,6 +248,7 @@
     padding: 45vh 0 50vh;
     font-size: var(--font);
     line-height: var(--leading);
+    font-family: var(--reading-font);
   }
 
   #reader p {
@@ -315,8 +329,11 @@
   .chrome-actions {
     display: flex;
     align-items: center;
-    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 16px 20px;
     flex: none;
+    max-width: 100%;
   }
 
   #chrome button {
@@ -373,6 +390,30 @@
   #font-dec { font-size: 12px; }
   #font-inc { font-size: 16px; }
 
+  #font-family {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    opacity: 0.72;
+    cursor: pointer;
+    max-width: 4.5em;
+  }
+  #font-family:hover,
+  #font-family:focus-visible { opacity: 1; }
+
+  #btn-download {
+    color: inherit;
+    text-decoration: none;
+    opacity: 0.72;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+  }
+  #btn-download:hover,
+  #btn-download:focus-visible { opacity: 1; }
+
   :focus-visible { outline: 1px solid color-mix(in srgb, var(--fg) 35%, transparent); outline-offset: 3px; }
   ::selection { background: rgba(29, 29, 31, 0.12); }
 
@@ -400,7 +441,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    #chrome { transition: none; }
+    #chrome, #guide { transition: none; }
   }
 </style>
 </head>
@@ -415,7 +456,7 @@
     </button>
   </div>
 
-  <div id="guide" hidden>
+  <div id="guide">
     <div id="guide-panel" role="dialog" aria-modal="true" aria-labelledby="guide-title">
       <button type="button" id="guide-close">关闭</button>
       <p id="guide-title">说明</p>
@@ -435,9 +476,10 @@
         <li><span>Esc</span><span>关闭说明，或隐藏控制栏</span></li>
       </ul>
       <p>双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。</p>
-      <p>鼠标移到页面最上方，可以改速度、字号和宽度。右下角很淡的数字，是现在读到哪里。</p>
+      <p>鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或下载 Chrome 版。右下角很淡的数字，是现在读到哪里。</p>
       <h2>文件</h2>
-      <p>文字只在这台浏览器里打开，不会上传。刷新后会记住速度、字号、宽度，以及同一个文件名的阅读位置。文件本身不会被保存。</p>
+      <p>文字只在这台浏览器里打开，不会上传。刷新后会记住速度、字号、字体、宽度，以及同一个文件名的阅读位置。文件本身不会被保存。</p>
+      <p>顶部的 Chrome 会下载扩展。解压后，在扩展程序页打开开发者模式，再选择加载已解压的扩展程序。</p>
       <p>整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
     </div>
   </div>
@@ -453,7 +495,13 @@
 
   <div id="focus-line" hidden></div>
   <div id="progress" hidden>0%</div>
-  <button type="button" id="guide-link">说明</button>
+  <button type="button" id="guide-link" aria-label="说明">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.25"></circle>
+      <circle cx="12" cy="8.1" r="0.95" fill="currentColor"></circle>
+      <path d="M12 11.2v5.2" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"></path>
+    </svg>
+  </button>
 
   <header id="chrome" hidden>
     <div id="doc-name"></div>
@@ -469,10 +517,18 @@
         <button type="button" id="font-dec" aria-label="减小字号">A−</button>
         <button type="button" id="font-inc" aria-label="增大字号">A+</button>
       </span>
+      <select id="font-family" aria-label="字体">
+        <option value="song">宋体</option>
+        <option value="hei">黑体</option>
+        <option value="kai">楷体</option>
+        <option value="georgia">Georgia</option>
+      </select>
       <label class="slider width-control" title="阅读宽度">
         <span>宽</span>
         <input id="measure" type="range" min="600" max="840" step="20" value="720" aria-label="阅读宽度">
       </label>
+      <button type="button" id="btn-full">全屏</button>
+      <a id="btn-download" href="PureReader-chrome.zip" download="PureReader-chrome.zip" title="下载 Chrome 版">Chrome</a>
     </div>
   </header>
 
@@ -485,6 +541,13 @@
   const PDFJS_VERSION = "3.11.174";
   const PDFJS_BASE = "https://cdn.jsdelivr.net/npm/pdfjs-dist@" + PDFJS_VERSION;
   const STORE_KEY = "purereader.v1";
+
+  const FONTS = {
+    song: '"Songti SC", "Noto Serif SC", STSong, "Source Han Serif SC", "Noto Serif CJK SC", PMingLiU, serif',
+    hei: '"PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei", sans-serif',
+    kai: '"Kaiti SC", STKaiti, KaiTi, "AR PL UKai CN", serif',
+    georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
+  };
 
   const SPEED_MIN = 5;
   const SPEED_MAX = 80;
@@ -513,6 +576,8 @@
   const btnPlay = document.getElementById("btn-play");
   const speedInput = document.getElementById("speed");
   const measureInput = document.getElementById("measure");
+  const fontSelect = document.getElementById("font-family");
+  const btnFull = document.getElementById("btn-full");
   const fileInput = document.getElementById("file");
 
   const narrowScreen = window.matchMedia("(max-width: 720px)").matches;
@@ -522,6 +587,7 @@
     fileName: "",
     speed: SPEED_DEFAULT,
     fontSize: narrowScreen ? 19 : 21,
+    font: "song",
     measure: MEASURE_DEFAULT,
     playing: true,
     active: 0,
@@ -556,6 +622,7 @@
       state.store.files = raw.files || {};
       if (raw.speed) state.speed = clamp(Number(raw.speed) || SPEED_DEFAULT, SPEED_MIN, SPEED_MAX);
       if (raw.fontSize) state.fontSize = clamp(Number(raw.fontSize) || state.fontSize, FONT_MIN, FONT_MAX);
+      if (raw.font && FONTS[raw.font]) state.font = raw.font;
       if (raw.measure) state.measure = clamp(Number(raw.measure) || MEASURE_DEFAULT, MEASURE_MIN, MEASURE_MAX);
     } catch (err) {
       state.store = { files: {} };
@@ -565,6 +632,7 @@
   function persist() {
     state.store.speed = state.speed;
     state.store.fontSize = state.fontSize;
+    state.store.font = state.font;
     state.store.measure = state.measure;
     try { localStorage.setItem(STORE_KEY, JSON.stringify(state.store)); } catch (err) {}
   }
@@ -585,8 +653,10 @@
   function applyTypography() {
     document.documentElement.style.setProperty("--font", state.fontSize + "px");
     document.documentElement.style.setProperty("--measure", state.measure + "px");
+    document.documentElement.style.setProperty("--reading-font", FONTS[state.font] || FONTS.song);
     speedInput.value = String(state.speed);
     measureInput.value = String(state.measure);
+    fontSelect.value = FONTS[state.font] ? state.font : "song";
     speedInput.title = state.speed + " px/s";
   }
 
@@ -1490,15 +1560,24 @@
   }
 
   function openGuide() {
-    document.getElementById("guide").hidden = false;
+    document.getElementById("guide").classList.add("is-open");
   }
 
   function closeGuide() {
-    document.getElementById("guide").hidden = true;
+    document.getElementById("guide").classList.remove("is-open");
   }
 
   function guideOpen() {
-    return !document.getElementById("guide").hidden;
+    return document.getElementById("guide").classList.contains("is-open");
+  }
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
+    else document.documentElement.requestFullscreen().catch(function () {});
+  }
+
+  function updateFullscreenButton() {
+    btnFull.textContent = document.fullscreenElement ? "退出" : "全屏";
   }
 
   function onKey(e) {
@@ -1561,8 +1640,7 @@
     }
     if (e.code === "KeyF" && !e.repeat) {
       e.preventDefault();
-      if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
-      else document.documentElement.requestFullscreen().catch(function () {});
+      toggleFullscreen();
     }
   }
 
@@ -1575,7 +1653,7 @@
     document.addEventListener("pointerdown", function (e) {
       var guide = document.getElementById("guide");
       var link = document.getElementById("guide-link");
-      if (guide.hidden) return;
+      if (!guide.classList.contains("is-open")) return;
       if (guide.contains(e.target) || link.contains(e.target)) return;
       closeGuide();
     });
@@ -1585,6 +1663,15 @@
     btnPlay.addEventListener("click", togglePlay);
     document.getElementById("font-dec").addEventListener("click", function () { changeFont(-1); });
     document.getElementById("font-inc").addEventListener("click", function () { changeFont(1); });
+    fontSelect.addEventListener("change", function () {
+      if (!FONTS[fontSelect.value]) return;
+      state.font = fontSelect.value;
+      applyTypography();
+      persist();
+      afterLayoutChange();
+    });
+    btnFull.addEventListener("click", toggleFullscreen);
+    document.addEventListener("fullscreenchange", updateFullscreenButton);
 
     speedInput.addEventListener("input", function () {
       state.speed = clamp(Number(speedInput.value) || SPEED_DEFAULT, SPEED_MIN, SPEED_MAX);

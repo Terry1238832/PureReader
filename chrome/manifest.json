@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "纯净阅读",
+  "version": "1.0.0",
+  "description": "去掉干扰，只留下正文。",
+  "action": {
+    "default_title": "纯净阅读"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
