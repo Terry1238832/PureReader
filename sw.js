@@ -1,4 +1,4 @@
-var CACHE = "purereader-v2";
+var CACHE = "purereader-v3";
 
 self.addEventListener("install", function (event) {
   event.waitUntil(caches.open(CACHE).then(function (cache) {
@@ -17,15 +17,19 @@ self.addEventListener("activate", function (event) {
 
 self.addEventListener("fetch", function (event) {
   if (event.request.method !== "GET") return;
+  var url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
   event.respondWith(fetch(event.request).then(function (response) {
-    if (response.ok && new URL(event.request.url).origin === self.location.origin) {
+    if (response.ok) {
       var copy = response.clone();
       caches.open(CACHE).then(function (cache) { cache.put(event.request, copy); });
     }
     return response;
   }).catch(function () {
     return caches.match(event.request).then(function (cached) {
-      return cached || caches.match("./");
+      if (cached) return cached;
+      if (event.request.mode === "navigate") return caches.match("./");
+      return Response.error();
     });
   }));
 });

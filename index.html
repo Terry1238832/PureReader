@@ -673,7 +673,11 @@
   "use strict";
 
   const PDFJS_VERSION = "3.11.174";
-  const PDFJS_BASE = "https://cdn.jsdelivr.net/npm/pdfjs-dist@" + PDFJS_VERSION;
+  const PDFJS_BASES = [
+    "https://cdn.jsdelivr.net/npm/pdfjs-dist@" + PDFJS_VERSION + "/",
+    "https://registry.npmmirror.com/pdfjs-dist/" + PDFJS_VERSION + "/files/"
+  ];
+  let pdfjsBase = PDFJS_BASES[0];
   const STORE_KEY = "purereader.v1";
 
   const FONTS = {
@@ -1185,23 +1189,36 @@
     });
   }
 
-  function ensurePdfJs() {
-    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
-    if (pdfjsPromise) return pdfjsPromise;
-    pdfjsPromise = loadScript(PDFJS_BASE + "/build/pdf.min.js").then(async function () {
+  function loadPdfJsFrom(base) {
+    return loadScript(base + "build/pdf.min.js").then(async function () {
       const lib = window.pdfjsLib;
       if (!lib) throw new Error("pdfjs");
-      /* file:// 页面不能直接把 CDN 地址交给 Worker，先取回再做成 blob。 */
+      pdfjsBase = base;
+      /* file:// 页面不能直接把远程地址交给 Worker，先取回再做成 blob。 */
       try {
-        const res = await fetch(PDFJS_BASE + "/build/pdf.worker.min.js");
+        const res = await fetch(base + "build/pdf.worker.min.js");
         if (!res.ok) throw new Error("worker");
         const code = await res.text();
+        if (!code || code.charAt(0) === "<") throw new Error("worker");
         lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([code], { type: "text/javascript" }));
       } catch (err) {
-        lib.GlobalWorkerOptions.workerSrc = PDFJS_BASE + "/build/pdf.worker.min.js";
+        lib.GlobalWorkerOptions.workerSrc = base + "build/pdf.worker.min.js";
       }
       return lib;
-    }).catch(function (err) {
+    });
+  }
+
+  function ensurePdfJs() {
+    if (window.pdfjsLib && window.pdfjsLib.getDocument) return Promise.resolve(window.pdfjsLib);
+    if (pdfjsPromise) return pdfjsPromise;
+    function attempt(index) {
+      if (index >= PDFJS_BASES.length) return Promise.reject(new Error("pdfjs"));
+      return loadPdfJsFrom(PDFJS_BASES[index]).catch(function () {
+        try { delete window.pdfjsLib; } catch (err) {}
+        return attempt(index + 1);
+      });
+    }
+    pdfjsPromise = attempt(0).catch(function (err) {
       pdfjsPromise = null;
       throw err;
     });
@@ -1468,9 +1485,9 @@
     try {
       pdf = await lib.getDocument({
         data: bytes,
-        cMapUrl: PDFJS_BASE + "/cmaps/",
+        cMapUrl: pdfjsBase + "cmaps/",
         cMapPacked: true,
-        standardFontDataUrl: PDFJS_BASE + "/standard_fonts/",
+        standardFontDataUrl: pdfjsBase + "standard_fonts/",
         useWorkerFetch: false
       }).promise;
     } catch (err) {
@@ -1795,8 +1812,13 @@
   }
 
   function saveHistory(name, kind, buffer) {
-    if (!name || !buffer || buffer.byteLength > 26 * 1024 * 1024) return Promise.resolve();
-    const copy = buffer.slice(0);
+    let copy;
+    try {
+      if (!name || !buffer || !buffer.byteLength || buffer.byteLength > 26 * 1024 * 1024) return Promise.resolve();
+      copy = buffer.slice(0);
+    } catch (err) {
+      return Promise.resolve();
+    }
     return historyDb().then(function (db) {
       return new Promise(function (resolve) {
         const tx = db.transaction("files", "readwrite");
@@ -1886,8 +1908,11 @@
 
     bufferPromise.then(function (buffer) {
       if (job !== openJob) return null;
-      if (kind === "pdf") return parsePdf(buffer).then(function (paragraphs) { return { paragraphs: paragraphs, buffer: buffer }; });
-      return { paragraphs: parseTxt(decodeText(buffer)), buffer: buffer };
+      /* getDocument 会把 ArrayBuffer 转交给 Worker，必须先留下一份给历史。 */
+      let kept = buffer;
+      try { kept = buffer.slice(0); } catch (err) {}
+      if (kind === "pdf") return parsePdf(buffer).then(function (paragraphs) { return { paragraphs: paragraphs, buffer: kept }; });
+      return { paragraphs: parseTxt(decodeText(kept)), buffer: kept };
     }).then(function (result) {
       if (!result || job !== openJob) return;
       if (!result.paragraphs.length) {
