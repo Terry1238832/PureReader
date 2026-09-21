@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#F7F7F5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151515" media="(prefers-color-scheme: dark)">
+<title>阅读</title>
+<!--
+  纯净专注阅读器
+  双击本文件即可打开。文字始终留在浏览器里，不会上传。
+  阅读 PDF 时会从 jsDelivr 加载 PDF.js；TXT 不需要网络。
+-->
+<style>
+  :root {
+    --bg: #F7F7F5;
+    --fg: #1D1D1F;
+    --measure: 720px;
+    --font: 21px;
+    --leading: 1.9;
+    --chrome: color-mix(in srgb, var(--bg) 76%, transparent);
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151515;
+      --fg: #E8E8E6;
+      color-scheme: dark;
+    }
+    ::selection { background: rgba(232, 232, 230, 0.18); }
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--fg);
+    overflow: hidden;
+  }
+
+  body {
+    font-family: "Songti SC", "Noto Serif SC", STSong, "Source Han Serif SC", "Noto Serif CJK SC", PMingLiU, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "New York", "Times New Roman", serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  button, input { font: inherit; color: inherit; }
+  button {
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+  [hidden] { display: none !important; }
+
+  /* 首页与整理中的状态：页面上几乎只有一句字 */
+  #landing, #status {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    background: var(--bg);
+  }
+
+  #landing-open {
+    transform: translateY(-6vh);
+    text-align: center;
+  }
+
+  #status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 10vh;
+    text-align: center;
+  }
+
+  #landing-open {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    max-width: 28em;
+    padding: 24px;
+    cursor: pointer;
+  }
+
+  .landing-title, #status-text {
+    font-size: 22px;
+    line-height: 1.5;
+    letter-spacing: 0.04em;
+    font-weight: 400;
+  }
+
+  .landing-hint, #status-action {
+    font-size: 15px;
+    line-height: 1.75;
+    letter-spacing: 0.03em;
+    opacity: 0.46;
+  }
+
+  #status-action { margin-top: 18px; }
+
+  body.is-drag .hint-idle { display: none; }
+  body.is-drag .hint-drop { display: inline; }
+  .hint-drop { display: none; }
+
+  #guide-link {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%);
+    color: inherit;
+    text-decoration: none;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    opacity: 0.32;
+  }
+  #guide-link:hover,
+  #guide-link:focus-visible { opacity: 0.7; }
+
+  /* 滚动发生在这一层，遮罩相对视口而不是整篇文章 */
+  #scroller {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.22) 0%,
+      rgba(0, 0, 0, 0.42) 11%,
+      rgba(0, 0, 0, 0.72) 23%,
+      #000 40%,
+      #000 60%,
+      rgba(0, 0, 0, 0.72) 77%,
+      rgba(0, 0, 0, 0.42) 89%,
+      rgba(0, 0, 0, 0.22) 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.22) 0%,
+      rgba(0, 0, 0, 0.42) 11%,
+      rgba(0, 0, 0, 0.72) 23%,
+      #000 40%,
+      #000 60%,
+      rgba(0, 0, 0, 0.72) 77%,
+      rgba(0, 0, 0, 0.42) 89%,
+      rgba(0, 0, 0, 0.22) 100%
+    );
+  }
+  #scroller::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+  #reader {
+    width: min(var(--measure), calc(100% - 40px));
+    margin: 0 auto;
+    padding: 45vh 0 50vh;
+    font-size: var(--font);
+    line-height: var(--leading);
+  }
+
+  #reader p {
+    margin: 0;
+    opacity: 0.28;
+    letter-spacing: 0.012em;
+    overflow-wrap: break-word;
+    hanging-punctuation: allow-end;
+    text-wrap: pretty;
+  }
+
+  #reader p + p { margin-top: 1.15em; }
+
+  /* 几乎看不见的阅读中心线 */
+  #focus-line {
+    position: fixed;
+    z-index: 2;
+    top: 50%;
+    left: 50%;
+    width: min(var(--measure), calc(100% - 48px));
+    height: 1px;
+    transform: translate(-50%, -50%);
+    background: var(--fg);
+    opacity: 0.028;
+    pointer-events: none;
+  }
+
+  #progress {
+    position: fixed;
+    z-index: 3;
+    right: 18px;
+    bottom: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.3;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  #chrome {
+    position: fixed;
+    z-index: 4;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    padding: 14px 28px 18px;
+    background: var(--chrome);
+    backdrop-filter: blur(18px) saturate(1.3);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.01em;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.45s ease;
+    user-select: none;
+  }
+
+  #chrome.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  #doc-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.72;
+  }
+
+  .chrome-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: none;
+  }
+
+  #chrome button {
+    opacity: 0.72;
+    min-height: 32px;
+  }
+  #chrome button:hover,
+  #chrome button:focus-visible { opacity: 1; }
+
+  .slider {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.62;
+  }
+  .slider span { font-size: 12px; }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 92px;
+    height: 16px;
+    background: transparent;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 1px;
+    background: var(--fg);
+    opacity: 0.45;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 8px;
+    height: 8px;
+    margin-top: -3.5px;
+    border-radius: 50%;
+    background: var(--fg);
+  }
+  input[type="range"]::-moz-range-track {
+    height: 1px;
+    background: var(--fg);
+    border: 0;
+    opacity: 0.45;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 8px;
+    height: 8px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--fg);
+  }
+
+  .type-size { display: inline-flex; gap: 12px; align-items: baseline; }
+  #font-dec { font-size: 12px; }
+  #font-inc { font-size: 16px; }
+
+  :focus-visible { outline: 1px solid color-mix(in srgb, var(--fg) 35%, transparent); outline-offset: 3px; }
+  ::selection { background: rgba(29, 29, 31, 0.12); }
+
+  body.is-reading.cursor-hidden,
+  body.is-reading.cursor-hidden * { cursor: none !important; }
+
+  @media (max-width: 720px) {
+    :root { --leading: 1.85; }
+    #reader { width: calc(100% - 36px); }
+    .landing-title, #status-text { font-size: 20px; }
+    #chrome {
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      padding: 12px 16px 14px;
+    }
+    #doc-name { flex: 1 1 100%; }
+    .chrome-actions { width: 100%; justify-content: space-between; gap: 12px; }
+    .width-control { display: none; }
+    #progress { right: 14px; bottom: 12px; }
+    input[type="range"] { width: 72px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #chrome { transition: none; }
+  }
+</style>
+</head>
+<body>
+  <div id="landing">
+    <button type="button" id="landing-open">
+      <span class="landing-title">打开一段文字</span>
+      <span class="landing-hint">
+        <span class="hint-idle">拖入 PDF / TXT<br>或点击选择文件</span>
+        <span class="hint-drop">松开以开始阅读</span>
+      </span>
+    </button>
+    <a id="guide-link" href="guide.html">说明</a>
+  </div>
+
+  <div id="status" hidden role="status" aria-live="polite">
+    <p id="status-text">正在整理文字…</p>
+    <button type="button" id="status-action" hidden>重新选择</button>
+  </div>
+
+  <div id="scroller" hidden>
+    <article id="reader" aria-label="正文"></article>
+  </div>
+
+  <div id="focus-line" hidden></div>
+  <div id="progress" hidden>0%</div>
+
+  <header id="chrome" hidden>
+    <div id="doc-name"></div>
+    <div class="chrome-actions">
+      <button type="button" id="btn-open">打开</button>
+      <button type="button" id="btn-play">暂停</button>
+      <label class="slider">
+        <span>慢</span>
+        <input id="speed" type="range" min="5" max="80" step="1" value="22" aria-label="滚动速度">
+        <span>快</span>
+      </label>
+      <span class="type-size">
+        <button type="button" id="font-dec" aria-label="减小字号">A−</button>
+        <button type="button" id="font-inc" aria-label="增大字号">A+</button>
+      </span>
+      <label class="slider width-control" title="阅读宽度">
+        <span>宽</span>
+        <input id="measure" type="range" min="600" max="840" step="20" value="720" aria-label="阅读宽度">
+      </label>
+    </div>
+  </header>
+
+  <input id="file" type="file" accept=".pdf,.txt,text/plain,application/pdf" hidden>
+
+<script>
+(function () {
+  "use strict";
+
+  const PDFJS_VERSION = "3.11.174";
+  const PDFJS_BASE = "https://cdn.jsdelivr.net/npm/pdfjs-dist@" + PDFJS_VERSION;
+  const STORE_KEY = "purereader.v1";
+
+  const SPEED_MIN = 5;
+  const SPEED_MAX = 80;
+  const SPEED_DEFAULT = 22;
+  const FONT_MIN = 16;
+  const FONT_MAX = 30;
+  const MEASURE_MIN = 600;
+  const MEASURE_MAX = 840;
+  const MEASURE_DEFAULT = 720;
+  const WHEEL_PAUSE = 1100;
+  const CHROME_HIDE = 1500;
+  const CURSOR_HIDE = 3000;
+  const SOFT_MAX = 480;
+  const HARD_MAX = 600;
+
+  const landing = document.getElementById("landing");
+  const statusEl = document.getElementById("status");
+  const statusText = document.getElementById("status-text");
+  const statusAction = document.getElementById("status-action");
+  const scroller = document.getElementById("scroller");
+  const reader = document.getElementById("reader");
+  const focusLine = document.getElementById("focus-line");
+  const progressEl = document.getElementById("progress");
+  const chrome = document.getElementById("chrome");
+  const docName = document.getElementById("doc-name");
+  const btnPlay = document.getElementById("btn-play");
+  const speedInput = document.getElementById("speed");
+  const measureInput = document.getElementById("measure");
+  const fileInput = document.getElementById("file");
+
+  const narrowScreen = window.matchMedia("(max-width: 720px)").matches;
+
+  const state = {
+    mode: "landing",
+    fileName: "",
+    speed: SPEED_DEFAULT,
+    fontSize: narrowScreen ? 19 : 21,
+    measure: MEASURE_DEFAULT,
+    playing: true,
+    active: 0,
+    resumeAt: 0,
+    anim: null,
+    lastTs: 0,
+    scrollPos: 0,
+    lastSave: 0,
+    loopOn: false,
+    chromeForcedOff: false,
+    store: { files: {} }
+  };
+
+  /* 段落中心点缓存。滚动时只改 opacity，不读布局。 */
+  let metrics = [];
+  let cursorTimer = 0;
+  let chromeTimer = 0;
+  let dragDepth = 0;
+  let selecting = false;
+  let pdfjsPromise = null;
+  let openJob = 0;
+
+  function clamp(n, min, max) {
+    return Math.min(max, Math.max(min, n));
+  }
+
+  function loadStore() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+      if (!raw || typeof raw !== "object") return;
+      state.store = raw;
+      state.store.files = raw.files || {};
+      if (raw.speed) state.speed = clamp(Number(raw.speed) || SPEED_DEFAULT, SPEED_MIN, SPEED_MAX);
+      if (raw.fontSize) state.fontSize = clamp(Number(raw.fontSize) || state.fontSize, FONT_MIN, FONT_MAX);
+      if (raw.measure) state.measure = clamp(Number(raw.measure) || MEASURE_DEFAULT, MEASURE_MIN, MEASURE_MAX);
+    } catch (err) {
+      state.store = { files: {} };
+    }
+  }
+
+  function persist() {
+    state.store.speed = state.speed;
+    state.store.fontSize = state.fontSize;
+    state.store.measure = state.measure;
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state.store)); } catch (err) {}
+  }
+
+  function rememberScroll() {
+    if (!state.fileName || state.mode !== "reading") return;
+    const files = state.store.files || {};
+    files[state.fileName] = { scroll: Math.round(scroller.scrollTop), at: Date.now() };
+    const keys = Object.keys(files);
+    if (keys.length > 40) {
+      keys.sort(function (a, b) { return (files[a].at || 0) - (files[b].at || 0); });
+      keys.slice(0, keys.length - 40).forEach(function (key) { delete files[key]; });
+    }
+    state.store.files = files;
+    persist();
+  }
+
+  function applyTypography() {
+    document.documentElement.style.setProperty("--font", state.fontSize + "px");
+    document.documentElement.style.setProperty("--measure", state.measure + "px");
+    speedInput.value = String(state.speed);
+    measureInput.value = String(state.measure);
+    speedInput.title = state.speed + " px/s";
+  }
+
+  function setStatus(message, withAction) {
+    statusText.textContent = message;
+    statusAction.hidden = !withAction;
+    statusEl.hidden = false;
+    landing.hidden = true;
+  }
+
+  function showLanding() {
+    state.mode = "landing";
+    state.playing = false;
+    state.anim = null;
+    document.body.classList.remove("is-reading", "cursor-hidden");
+    document.title = "阅读";
+    landing.hidden = false;
+    statusEl.hidden = true;
+    scroller.hidden = true;
+    focusLine.hidden = true;
+    progressEl.hidden = true;
+    chrome.hidden = true;
+    chrome.classList.remove("visible");
+    reader.replaceChildren();
+    metrics = [];
+  }
+
+  /* ---------- 文字整理 ---------- */
+
+  function isCJK(ch) {
+    if (!ch) return false;
+    const c = ch.codePointAt(0);
+    return (c >= 0x2E80 && c <= 0x9FFF)
+      || (c >= 0xF900 && c <= 0xFAFF)
+      || (c >= 0x3000 && c <= 0x303F)
+      || (c >= 0xFF00 && c <= 0xFF60);
+  }
+
+  function smartJoin(left, right) {
+    const a = String(left || "").replace(/[ \t]+$/g, "");
+    const b = String(right || "").replace(/^[ \t]+/g, "");
+    if (!a) return b;
+    if (!b) return a;
+    const lc = a[a.length - 1];
+    const rc = b[0];
+    if (isCJK(lc) && isCJK(rc)) return a + b;
+    if (/[\s(/（〔【]$/.test(a) || /^[\s,.;:，。！？、；：)）〕】]/.test(b)) return a + b;
+    return a + " " + b;
+  }
+
+
+  function repairCJKSpacing(text) {
+    const chars = text.match(/[\u4e00-\u9fff]/g);
+    if (!chars || chars.length < 8) return text;
+    const spaced = text.match(/[\u4e00-\u9fff]\s+[\u4e00-\u9fff]/g);
+    if (!spaced || spaced.length < chars.length * 0.28) return text;
+    let out = text;
+    let prev;
+    do {
+      prev = out;
+      out = out.replace(/([\u4e00-\u9fff])\s+([\u4e00-\u9fff])/g, "$1$2");
+    } while (out !== prev);
+    return out;
+  }
+
+  function cleanup(text) {
+    let t = String(text || "")
+      .replace(/[\u200b\u200c\u200d\ufeff\u00ad]/g, "")
+      .replace(/\u00a0/g, " ");
+    t = repairCJKSpacing(t);
+    t = t.replace(/[ \t]{2,}/g, " ");
+    t = t.replace(/\s+([，。！？、；：,.!?;:])/g, "$1");
+    t = t.replace(/([（(〔【])\s+/g, "$1");
+    t = t.replace(/\s+([）)〕】])/g, "$1");
+    return t.trim();
+  }
+
+  function isPageNumber(text) {
+    const t = String(text || "").trim();
+    if (!t || t.length > 18) return false;
+    return /^(?:[-–—]\s*)?(?:\d{1,4}|[ivxlcdmIVXLCDM]{1,8}|page\s+\d+|第\s*\d+\s*页)(?:\s*[-–—])?$/i.test(t)
+      || /^\d{1,4}\s*[/／]\s*\d{1,4}$/.test(t)
+      || /^[-–—]\s*\d{1,4}\s*[-–—]$/.test(t);
+  }
+
+  function splitSentences(text) {
+    const parts = [];
+    let buf = "";
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      buf += ch;
+      let sentenceEnd = "。！？!?".includes(ch);
+      if (ch === ".") {
+        const next = text[i + 1] || "";
+        const atBreak = next === "" || /[\s”"’']/.test(next);
+        const abbrev = /(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|etc|e\.g|i\.e)\.$/i.test(buf);
+        sentenceEnd = atBreak && !abbrev;
+      }
+      if (!sentenceEnd) continue;
+      while (/[\s”"’'」』】）)]/.test(text[i + 1] || "")) {
+        i += 1;
+        buf += text[i];
+      }
+      parts.push(buf);
+      buf = "";
+    }
+    if (buf.trim()) parts.push(buf);
+    return parts.map(function (s) { return s.trim(); }).filter(Boolean);
+  }
+
+  function chunkHard(text, size) {
+    const out = [];
+    let rest = text.trim();
+    while (rest.length > size) {
+      let cut = rest.lastIndexOf("，", size);
+      if (cut < size * 0.5) cut = rest.lastIndexOf(" ", size);
+      if (cut < size * 0.45) cut = rest.lastIndexOf("、", size);
+      if (cut < size * 0.4) cut = size;
+      out.push(rest.slice(0, cut).trim());
+      rest = rest.slice(cut).replace(/^[，、\s]+/, "");
+    }
+    if (rest) out.push(rest);
+    return out.filter(Boolean);
+  }
+
+  function splitLong(text) {
+    const t = cleanup(text);
+    if (!t) return [];
+    if (t.length <= HARD_MAX) return [t];
+    const sentences = splitSentences(t);
+    if (sentences.length <= 1) return chunkHard(t, SOFT_MAX);
+    const out = [];
+    let buf = "";
+    sentences.forEach(function (sentence) {
+      const joined = buf ? smartJoin(buf, sentence) : sentence;
+      if (buf && joined.length > SOFT_MAX) {
+        out.push(buf);
+        buf = sentence;
+      } else {
+        buf = joined;
+      }
+    });
+    if (buf) out.push(buf);
+    return out.flatMap(function (part) {
+      return part.length > HARD_MAX ? chunkHard(part, SOFT_MAX) : [part];
+    });
+  }
+
+  function joinWrapped(lines) {
+    const parts = [];
+    let text = "";
+    function flush() {
+      if (text.trim()) parts.push(text.trim());
+      text = "";
+    }
+    lines.forEach(function (line) {
+      if (!text) {
+        text = line;
+        return;
+      }
+      const prevEnd = /[。！？.!?…]$/.test(text.trim());
+      const indent = /^[\u3000]{1,2}\S/.test(line);
+      if (prevEnd && indent) {
+        flush();
+        text = line;
+        return;
+      }
+      if (/[A-Za-z]-$/.test(text) && /^[a-z]/.test(line) && text.length > 24) {
+        text = text.replace(/-$/, "") + line;
+        return;
+      }
+      text = smartJoin(text, line);
+    });
+    flush();
+    return parts;
+  }
+
+  function trimAscii(line) {
+    return String(line || "").replace(/^[ \t\f\v]+|[ \t\f\v]+$/g, "");
+  }
+
+  function isVisuallyBlank(line) {
+    return !String(line || "").replace(/[\s\u3000\u00a0]/g, "");
+  }
+
+  function parseTxt(raw) {
+    const text = String(raw || "").replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    const lines = text.split("\n");
+    const kept = lines.map(trimAscii).filter(function (line) { return !isVisuallyBlank(line); });
+    if (!kept.length) return [];
+
+    const hasBlank = lines.some(function (line) { return isVisuallyBlank(line); });
+    if (!hasBlank) {
+      const ended = kept.filter(function (line) { return /[。！？.!?…]$/.test(line); }).length;
+      if (ended / kept.length >= 0.65 && kept.length >= 2) {
+        return kept.flatMap(function (line) { return splitLong(line); });
+      }
+      return joinWrapped(kept).flatMap(splitLong);
+    }
+
+    return text.split(/\n[ \t]*\n+/).flatMap(function (block) {
+      const ls = block.split("\n").map(trimAscii).filter(function (line) { return !isVisuallyBlank(line); });
+      if (!ls.length) return [];
+      return joinWrapped(ls).flatMap(splitLong);
+    }).filter(Boolean);
+  }
+
+  function decodeText(buffer) {
+    const bytes = new Uint8Array(buffer);
+    const utf8 = new TextDecoder("utf-8", { fatal: false }).decode(bytes).replace(/^\uFEFF/, "");
+    const bad = (utf8.match(/\uFFFD/g) || []).length;
+    if (bad > 3 && bad / Math.max(utf8.length, 1) > 0.015) {
+      try { return new TextDecoder("gb18030").decode(bytes).replace(/^\uFEFF/, ""); } catch (err) {}
+    }
+    return utf8;
+  }
+
+  function percentile(values, p) {
+    if (!values.length) return 0;
+    const sorted = values.slice().sort(function (a, b) { return a - b; });
+    const i = clamp(Math.floor((sorted.length - 1) * p), 0, sorted.length - 1);
+    return sorted[i];
+  }
+
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      const script = document.createElement("script");
+      script.src = src;
+      script.async = true;
+      script.onload = function () { resolve(); };
+      script.onerror = function () { reject(new Error("script")); };
+      document.head.appendChild(script);
+    });
+  }
+
+  function ensurePdfJs() {
+    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    if (pdfjsPromise) return pdfjsPromise;
+    pdfjsPromise = loadScript(PDFJS_BASE + "/build/pdf.min.js").then(async function () {
+      const lib = window.pdfjsLib;
+      if (!lib) throw new Error("pdfjs");
+      /* file:// 页面不能直接把 CDN 地址交给 Worker，先取回再做成 blob。 */
+      try {
+        const res = await fetch(PDFJS_BASE + "/build/pdf.worker.min.js");
+        if (!res.ok) throw new Error("worker");
+        const code = await res.text();
+        lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([code], { type: "text/javascript" }));
+      } catch (err) {
+        lib.GlobalWorkerOptions.workerSrc = PDFJS_BASE + "/build/pdf.worker.min.js";
+      }
+      return lib;
+    }).catch(function (err) {
+      pdfjsPromise = null;
+      throw err;
+    });
+    return pdfjsPromise;
+  }
+
+  function yieldFrame() {
+    return new Promise(function (resolve) { requestAnimationFrame(function () { resolve(); }); });
+  }
+
+  function clusterLines(items) {
+    const sorted = items.slice().sort(function (a, b) { return a.y - b.y || a.x - b.x; });
+    const lines = [];
+    sorted.forEach(function (item) {
+      const last = lines[lines.length - 1];
+      const tol = Math.max(2.2, (last ? last.h : item.h) * 0.45);
+      if (last && Math.abs(item.y - last.anchor) <= tol) {
+        last.items.push(item);
+        last.h = Math.max(last.h, item.h);
+      } else {
+        lines.push({ anchor: item.y, h: item.h, items: [item] });
+      }
+    });
+    return lines;
+  }
+
+  function lineFromItems(items, pageWidth, pageHeight, page) {
+    const sorted = items.slice().sort(function (a, b) { return a.x - b.x; });
+    let text = "";
+    let prev = null;
+    sorted.forEach(function (item) {
+      if (prev) {
+        const gap = item.x - (prev.x + prev.w);
+        if (gap > Math.max(prev.h * 0.2, 1.6) && text && !/\s$/.test(text) && !/^\s/.test(item.str)) {
+          const lc = text[text.length - 1];
+          const rc = item.str[0];
+          if (!(isCJK(lc) && isCJK(rc))) text += " ";
+        }
+      }
+      text += item.str;
+      prev = item;
+    });
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+    const y = sorted.reduce(function (sum, item) { return sum + item.y; }, 0) / sorted.length;
+    return {
+      text: text.replace(/[ \t]{2,}/g, " ").trim(),
+      x: first.x,
+      y: y,
+      w: last.x + last.w - first.x,
+      h: Math.max.apply(null, sorted.map(function (item) { return item.h; })),
+      pageWidth: pageWidth,
+      pageHeight: pageHeight,
+      page: page
+    };
+  }
+
+  function orderReading(items, pageWidth, pageHeight, page) {
+    if (!items.length) return [];
+    const rough = clusterLines(items);
+    const gutters = [];
+    rough.forEach(function (line) {
+      const sorted = line.items.slice().sort(function (a, b) { return a.x - b.x; });
+      for (let i = 1; i < sorted.length; i++) {
+        const gap = sorted[i].x - (sorted[i - 1].x + sorted[i - 1].w);
+        const mid = (sorted[i].x + sorted[i - 1].x + sorted[i - 1].w) / 2;
+        if (gap > 34 && mid > pageWidth * 0.28 && mid < pageWidth * 0.72) gutters.push(mid);
+      }
+    });
+
+    const toLine = function (group) {
+      return group.map(function (line) {
+        return lineFromItems(line.items, pageWidth, pageHeight, page);
+      }).filter(function (line) { return line.text; });
+    };
+
+    if (gutters.length < Math.max(4, rough.length * 0.35)) return toLine(rough);
+
+    gutters.sort(function (a, b) { return a - b; });
+    const gutter = gutters[Math.floor(gutters.length / 2)];
+    const close = gutters.filter(function (g) { return Math.abs(g - gutter) < 20; });
+    if (close.length < Math.max(4, rough.length * 0.3)) return toLine(rough);
+
+    const spanning = [];
+    const left = [];
+    const right = [];
+    items.forEach(function (item) {
+      const edge = item.x + item.w;
+      const crosses = item.x < gutter - 10 && edge > gutter + 10;
+      if (crosses || item.w > pageWidth * 0.58) spanning.push(item);
+      else if (item.x + item.w / 2 < gutter) left.push(item);
+      else right.push(item);
+    });
+
+    const leftLines = clusterLines(left);
+    const rightLines = clusterLines(right);
+    const spanLines = clusterLines(spanning);
+    const output = [];
+    let li = 0;
+    let ri = 0;
+    function flushAbove(y) {
+      const lbuf = [];
+      const rbuf = [];
+      while (li < leftLines.length && leftLines[li].anchor < y - 2) lbuf.push(leftLines[li++]);
+      while (ri < rightLines.length && rightLines[ri].anchor < y - 2) rbuf.push(rightLines[ri++]);
+      output.push.apply(output, toLine(lbuf));
+      output.push.apply(output, toLine(rbuf));
+    }
+    spanLines.forEach(function (line) {
+      flushAbove(line.anchor);
+      output.push.apply(output, toLine([line]));
+    });
+    flushAbove(Infinity);
+    return output;
+  }
+
+  function normRunning(text) {
+    return text.toLowerCase().replace(/\d+/g, "#").replace(/\s+/g, " ").trim();
+  }
+
+  function stripRunningMatter(pages) {
+    const topCounts = new Map();
+    const bottomCounts = new Map();
+    const minPages = pages.length >= 4 ? Math.max(3, Math.ceil(pages.length * 0.4)) : Infinity;
+
+    pages.forEach(function (lines) {
+      lines.forEach(function (line) {
+        const t = line.text.trim();
+        if (!t || t.length > 60 || isPageNumber(t)) return;
+        const key = normRunning(t);
+        if (key.length < 2) return;
+        if (line.y < line.pageHeight * 0.11) topCounts.set(key, (topCounts.get(key) || 0) + 1);
+        if (line.y > line.pageHeight * 0.9) bottomCounts.set(key, (bottomCounts.get(key) || 0) + 1);
+      });
+    });
+
+    const headers = new Set();
+    const footers = new Set();
+    topCounts.forEach(function (count, key) { if (count >= minPages) headers.add(key); });
+    bottomCounts.forEach(function (count, key) { if (count >= minPages) footers.add(key); });
+
+    return pages.map(function (lines) {
+      return lines.filter(function (line) {
+        const t = line.text.trim();
+        if (!t) return false;
+        if (/^[-–—*•·.\s]{1,8}$/.test(t)) return false;
+        const edgeTop = line.y < line.pageHeight * 0.12 || line === lines[0];
+        const edgeBottom = line.y > line.pageHeight * 0.88 || line === lines[lines.length - 1];
+        if ((edgeTop || edgeBottom) && isPageNumber(t)) return false;
+        const key = normRunning(t);
+        if (edgeTop && headers.has(key)) return false;
+        if (edgeBottom && footers.has(key)) return false;
+        return true;
+      });
+    });
+  }
+
+  function looksLikeHeading(line, stats) {
+    const t = line.text.trim();
+    if (t.length < 2 || t.length > 32) return false;
+    if (/[。！？.!?,，、；;：:]$/.test(t)) return false;
+    if (/[A-Za-z]-$/.test(t)) return false;
+    if (line.w > stats.fullWidth * 0.72) return false;
+    return true;
+  }
+
+  function isListItem(text) {
+    return /^(?:\d{1,3}|[一二三四五六七八九十]{1,3})[.、)）]\s*\S/.test(text)
+      || /^[（(]\d{1,3}[)）]\s*\S/.test(text)
+      || /^[•·▪◦]\s*\S/.test(text)
+      || /^(?:[-–—])\s+\S/.test(text);
+  }
+
+  function shouldBreak(prev, line, stats) {
+    const prevText = prev.text.trim();
+    const nextText = line.text.trim();
+    if (!nextText) return true;
+    if (isListItem(nextText)) return true;
+    if (isListItem(prevText) && isListItem(nextText)) return true;
+
+    const samePage = prev.page === line.page;
+    const gap = samePage ? line.y - prev.y : null;
+    const bigGap = gap != null && stats.lineGap > 0 && gap > Math.max(stats.lineGap * 1.48, stats.lineGap + 6);
+    if (bigGap) return true;
+    /* 短行只有在上一行已经收束时才当成标题，避免把普通换行拆开。 */
+    if (looksLikeHeading(line, stats)) {
+      const prevEnded = /[。！？.!?…:：]$/.test(prevText);
+      const prevLooksShort = prev.w < stats.fullWidth * 0.78;
+      if (prevEnded || prevLooksShort || (gap != null && stats.lineGap > 0 && gap > stats.lineGap * 1.25)) return true;
+    }
+    if (looksLikeHeading(prev, stats) && nextText.length > prevText.length + 6) return true;
+
+    const prevEnd = /[。！？!?…]$/.test(prevText) || /[.!?]["”’']?$/.test(prevText);
+    const prevShort = prev.w < stats.fullWidth * 0.78;
+    const nextIndent = line.x > stats.baseIndent + 8 || /^[\u3000]{1,2}\S/.test(nextText);
+
+    if (!samePage) {
+      if (prevShort && prevEnd) return true;
+      if (!prevShort && !prevEnd) return false;
+      return prevEnd || prevShort;
+    }
+    if (prevEnd && prevShort) return true;
+    if (prevEnd && nextIndent) return true;
+    return false;
+  }
+
+  function linesToParagraphs(lines) {
+    const usable = lines.filter(function (line) { return line.text && line.text.trim(); });
+    if (!usable.length) return [];
+    const gaps = [];
+    for (let i = 1; i < usable.length; i++) {
+      if (usable[i].page !== usable[i - 1].page) continue;
+      const gap = usable[i].y - usable[i - 1].y;
+      if (gap > 1 && gap < 90) gaps.push(gap);
+    }
+    const stats = {
+      fullWidth: percentile(usable.map(function (line) { return line.w; }), 0.72) || 1,
+      lineGap: percentile(gaps, 0.5) || 18,
+      baseIndent: percentile(usable.map(function (line) { return line.x; }), 0.12) || 0
+    };
+
+    const paragraphs = [];
+    let buf = [];
+    function flush() {
+      if (!buf.length) return;
+      let text = "";
+      buf.forEach(function (line, index) {
+        const piece = line.text.trim();
+        if (!text) {
+          text = piece;
+          return;
+        }
+        const prevLine = buf[index - 1];
+        const prevText = prevLine.text.trim();
+        const brokenWord = prevText.length > 16
+          && prevLine.w > stats.fullWidth * 0.5
+          && /[A-Za-z]-$/.test(prevText)
+          && /^[a-z]/.test(piece);
+        text = brokenWord ? text.replace(/-$/, "") + piece : smartJoin(text, piece);
+      });
+      text = text.replace(/([A-Za-z]{2,})- ([a-z]{2,})/g, "$1$2");
+      splitLong(text).forEach(function (part) {
+        if (part && !isPageNumber(part)) paragraphs.push(part);
+      });
+      buf = [];
+    }
+
+    usable.forEach(function (line) {
+      if (!buf.length) {
+        buf.push(line);
+        return;
+      }
+      if (shouldBreak(buf[buf.length - 1], line, stats)) flush();
+      buf.push(line);
+    });
+    flush();
+    return paragraphs;
+  }
+
+  async function parsePdf(buffer) {
+    const lib = await ensurePdfJs();
+    const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+    let pdf;
+    try {
+      pdf = await lib.getDocument({
+        data: bytes,
+        cMapUrl: PDFJS_BASE + "/cmaps/",
+        cMapPacked: true,
+        standardFontDataUrl: PDFJS_BASE + "/standard_fonts/",
+        useWorkerFetch: false
+      }).promise;
+    } catch (err) {
+      if (err && err.name === "PasswordException") {
+        const locked = new Error("locked");
+        locked.code = "locked";
+        throw locked;
+      }
+      throw err;
+    }
+
+    const pageLines = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      statusText.textContent = "正在整理第 " + i + " / " + pdf.numPages + " 页…";
+      await yieldFrame();
+      try {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 1 });
+        const content = await page.getTextContent();
+        const items = [];
+        content.items.forEach(function (item) {
+          if (!item || !item.str || !item.str.trim()) return;
+          const angle = Math.atan2(item.transform[1], item.transform[0]);
+          if (Math.abs(angle) > 0.45) return;
+          const point = viewport.convertToViewportPoint(item.transform[4], item.transform[5]);
+          const h = Math.max(6, Math.hypot(item.transform[2], item.transform[3]) || item.height || 12);
+          items.push({
+            str: item.str,
+            x: point[0],
+            y: point[1],
+            w: Math.max(item.width || item.str.length * h * 0.5, 1),
+            h: h
+          });
+        });
+        const seen = new Set();
+        const unique = [];
+        items.forEach(function (item) {
+          const key = Math.round(item.x) + ":" + Math.round(item.y * 2) + ":" + item.str;
+          if (seen.has(key)) return;
+          seen.add(key);
+          unique.push(item);
+        });
+        pageLines.push(orderReading(unique, viewport.width, viewport.height, i));
+        page.cleanup();
+      } catch (err) {
+        pageLines.push([]);
+      }
+    }
+    pdf.destroy();
+    statusText.textContent = "正在整理文字…";
+    await yieldFrame();
+    return linesToParagraphs([].concat.apply([], stripRunningMatter(pageLines)));
+  }
+
+  /* ---------- 阅读界面 ---------- */
+
+  function renderParagraphs(paragraphs) {
+    const frag = document.createDocumentFragment();
+    paragraphs.forEach(function (text, index) {
+      const p = document.createElement("p");
+      p.dataset.i = String(index);
+      p.textContent = text;
+      frag.appendChild(p);
+    });
+    reader.replaceChildren(frag);
+  }
+
+  function measure() {
+    const nodes = reader.children;
+    const base = scroller.getBoundingClientRect().top;
+    const scrollTop = scroller.scrollTop;
+    const next = new Array(nodes.length);
+    for (let i = 0; i < nodes.length; i++) {
+      const rect = nodes[i].getBoundingClientRect();
+      next[i] = {
+        el: nodes[i],
+        top: rect.top - base + scrollTop,
+        height: rect.height,
+        op: -1
+      };
+    }
+    metrics = next;
+  }
+
+  function opacityFor(index, active, dist, vh) {
+    const band = Math.max(78, Math.min(150, vh * 0.13));
+    if (dist <= band) return 1;
+    const hops = Math.abs(index - active);
+    const spatial = (function () {
+      const d = dist - band;
+      if (d < 90) return 1 - (d / 90) * 0.36;
+      if (d < 200) return 0.64 - ((d - 90) / 110) * 0.24;
+      const rest = Math.min(1, (d - 200) / Math.max(160, vh * 0.28));
+      return 0.4 - rest * 0.16;
+    })();
+    let byHop = 0.3;
+    if (hops <= 1) byHop = 0.66;
+    else if (hops === 2) byHop = 0.42;
+    return clamp(Math.min(byHop, spatial), 0.2, 1);
+  }
+
+  function applyFocus() {
+    if (!metrics.length || state.mode !== "reading") return;
+    const vh = scroller.clientHeight || window.innerHeight;
+    const center = scroller.scrollTop + vh / 2;
+    const from = scroller.scrollTop - vh * 0.15;
+    const to = scroller.scrollTop + vh * 1.15;
+
+    let lo = 0;
+    let hi = metrics.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (metrics[mid].top + metrics[mid].height < from) lo = mid + 1;
+      else hi = mid;
+    }
+
+    let end = lo;
+    while (end < metrics.length && metrics[end].top < to) end += 1;
+
+    let active = lo;
+    let best = Infinity;
+    for (let i = lo; i < end; i++) {
+      const mid = metrics[i].top + metrics[i].height / 2;
+      const d = Math.abs(mid - center);
+      if (d < best - 0.5) {
+        best = d;
+        active = i;
+      }
+    }
+    state.active = active;
+
+    for (let i = lo; i < end; i++) {
+      const mid = metrics[i].top + metrics[i].height / 2;
+      const op = opacityFor(i, active, Math.abs(mid - center), vh);
+      if (metrics[i].op < 0 || Math.abs(metrics[i].op - op) > 0.02) {
+        metrics[i].op = op;
+        metrics[i].el.style.opacity = op.toFixed(3);
+      }
+    }
+  }
+
+  function updateProgress() {
+    const max = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    const value = max <= 1 ? 0 : Math.round((scroller.scrollTop / max) * 100);
+    const text = clamp(value, 0, 100) + "%";
+    if (progressEl.textContent !== text) progressEl.textContent = text;
+  }
+
+  function updatePlayButton() {
+    btnPlay.textContent = state.playing ? "暂停" : "继续";
+  }
+
+  function maxScroll() {
+    return Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+  }
+
+  function tick(ts) {
+    if (state.mode !== "reading") {
+      state.loopOn = false;
+      return;
+    }
+    if (!state.lastTs) state.lastTs = ts;
+    const dt = Math.min(0.05, (ts - state.lastTs) / 1000);
+    state.lastTs = ts;
+
+    if (state.anim) {
+      const anim = state.anim;
+      const t = clamp((ts - anim.t0) / anim.duration, 0, 1);
+      const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      const y = anim.start + (anim.target - anim.start) * eased;
+      scroller.scrollTop = y;
+      state.scrollPos = y;
+      if (t >= 1) {
+        state.anim = null;
+        state.resumeAt = performance.now() + 900;
+      }
+    } else if (state.playing && performance.now() >= state.resumeAt) {
+      const max = maxScroll();
+      state.scrollPos = Math.min(max, state.scrollPos + state.speed * dt);
+      scroller.scrollTop = state.scrollPos;
+    } else {
+      state.scrollPos = scroller.scrollTop;
+    }
+
+    applyFocus();
+    updateProgress();
+    if (ts - state.lastSave > 1000) {
+      state.lastSave = ts;
+      rememberScroll();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function startLoop() {
+    if (state.loopOn) return;
+    state.loopOn = true;
+    state.lastTs = 0;
+    requestAnimationFrame(tick);
+  }
+
+  function animateToParagraph(index) {
+    if (!metrics.length) return;
+    const i = clamp(index, 0, metrics.length - 1);
+    state.active = i;
+    const m = metrics[i];
+    const target = clamp(m.top + m.height / 2 - scroller.clientHeight / 2, 0, maxScroll());
+    const start = scroller.scrollTop;
+    const duration = Math.min(780, Math.max(320, Math.abs(target - start) * 0.38));
+    state.anim = { start: start, target: target, t0: performance.now(), duration: duration };
+  }
+
+  function afterLayoutChange() {
+    requestAnimationFrame(function () {
+      measure();
+      applyFocus();
+      updateProgress();
+    });
+  }
+
+  function enterReading(paragraphs) {
+    renderParagraphs(paragraphs);
+    state.mode = "reading";
+    state.playing = true;
+    state.anim = null;
+    state.resumeAt = 0;
+    document.body.classList.add("is-reading");
+    document.title = state.fileName || "阅读";
+    docName.textContent = state.fileName;
+    updatePlayButton();
+    landing.hidden = true;
+    statusEl.hidden = true;
+    scroller.hidden = false;
+    focusLine.hidden = false;
+    progressEl.hidden = false;
+    chrome.hidden = false;
+    chrome.classList.remove("visible");
+
+    const saved = state.store.files && state.store.files[state.fileName];
+    scroller.scrollTop = saved && typeof saved.scroll === "number" ? saved.scroll : 0;
+    state.scrollPos = scroller.scrollTop;
+    measure();
+    applyFocus();
+    updateProgress();
+    startLoop();
+    armCursor();
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () {
+        if (state.mode === "reading") afterLayoutChange();
+      });
+    }
+  }
+
+  function togglePlay() {
+    state.playing = !state.playing;
+    if (state.playing) {
+      state.resumeAt = 0;
+      state.lastTs = 0;
+      state.scrollPos = scroller.scrollTop;
+    }
+    updatePlayButton();
+  }
+
+  function changeSpeed(delta) {
+    state.speed = clamp(state.speed + delta, SPEED_MIN, SPEED_MAX);
+    speedInput.value = String(state.speed);
+    speedInput.title = state.speed + " px/s";
+    persist();
+  }
+
+  function changeFont(delta) {
+    state.fontSize = clamp(state.fontSize + delta, FONT_MIN, FONT_MAX);
+    applyTypography();
+    persist();
+    afterLayoutChange();
+  }
+
+  function openFilePicker() {
+    fileInput.value = "";
+    fileInput.click();
+  }
+
+  function isPdfFile(file) {
+    return file.type === "application/pdf" || /\.pdf$/i.test(file.name || "");
+  }
+
+  function isTxtFile(file) {
+    return /^text\//.test(file.type || "") || /\.(txt|text)$/i.test(file.name || "");
+  }
+
+  function readBuffer(file) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function () { resolve(reader.result); };
+      reader.onerror = function () { reject(reader.error || new Error("read")); };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  async function handleFiles(fileList) {
+    const file = fileList && fileList[0];
+    if (!file) return;
+    const job = ++openJob;
+    if (!isPdfFile(file) && !isTxtFile(file)) {
+      setStatus("请打开 PDF 或 TXT 文件", true);
+      state.mode = "landing";
+      return;
+    }
+
+    state.fileName = file.name || "未命名";
+    state.mode = "processing";
+    document.body.classList.remove("is-reading", "cursor-hidden");
+    landing.hidden = true;
+    scroller.hidden = true;
+    focusLine.hidden = true;
+    progressEl.hidden = true;
+    chrome.hidden = true;
+    setStatus(isPdfFile(file) ? "正在整理文字…" : "正在整理文字…", false);
+
+    try {
+      const buffer = await readBuffer(file);
+      if (job !== openJob) return;
+      let paragraphs;
+      if (isPdfFile(file)) paragraphs = await parsePdf(buffer);
+      else paragraphs = parseTxt(decodeText(buffer));
+      if (job !== openJob) return;
+      if (!paragraphs.length) {
+        const empty = isPdfFile(file)
+          ? "没有提取到文字。这份 PDF 可能是扫描件。"
+          : "没有可读的文字。";
+        setStatus(empty, true);
+        state.mode = "landing";
+        return;
+      }
+      enterReading(paragraphs);
+    } catch (err) {
+      if (job !== openJob) return;
+      const message = err && err.code === "locked"
+        ? "这份 PDF 有密码，无法在本地打开。"
+        : (isPdfFile(file) ? "无法读取这份 PDF。请检查网络后重试，TXT 不需要网络。" : "无法读取这个文件。");
+      setStatus(message, true);
+      state.mode = "landing";
+    }
+  }
+
+  /* ---------- 输入 ---------- */
+
+  function onUserIntent() {
+    if (state.mode !== "reading") return;
+    state.anim = null;
+    state.resumeAt = performance.now() + WHEEL_PAUSE;
+  }
+
+  function hideChromeNow() {
+    chrome.classList.remove("visible");
+    clearTimeout(chromeTimer);
+    armCursor();
+  }
+
+  function scheduleChromeHide() {
+    clearTimeout(chromeTimer);
+    chromeTimer = setTimeout(hideChromeNow, CHROME_HIDE);
+  }
+
+  function revealChrome() {
+    if (state.mode !== "reading" || state.chromeForcedOff) return;
+    chrome.classList.add("visible");
+    clearTimeout(chromeTimer);
+    document.body.classList.remove("cursor-hidden");
+  }
+
+  function armCursor() {
+    clearTimeout(cursorTimer);
+    document.body.classList.remove("cursor-hidden");
+    if (state.mode !== "reading" || chrome.classList.contains("visible")) return;
+    cursorTimer = setTimeout(function () {
+      if (state.mode === "reading" && !chrome.classList.contains("visible")) {
+        document.body.classList.add("cursor-hidden");
+      }
+    }, CURSOR_HIDE);
+  }
+
+  function onKey(e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const inChrome = document.activeElement && chrome.contains(document.activeElement);
+    if (inChrome && e.code !== "Escape" && e.code !== "KeyO" && e.code !== "KeyF") return;
+
+    if (e.code === "KeyO") {
+      e.preventDefault();
+      openFilePicker();
+      return;
+    }
+    if (state.mode !== "reading") return;
+
+    if (e.code === "Space") {
+      e.preventDefault();
+      if (e.repeat) return;
+      togglePlay();
+      return;
+    }
+    if (e.code === "ArrowUp" || e.code === "ArrowDown") {
+      e.preventDefault();
+      if (state.anim) return;
+      animateToParagraph(state.active + (e.code === "ArrowDown" ? 1 : -1));
+      return;
+    }
+    if (e.code === "Home") {
+      e.preventDefault();
+      animateToParagraph(0);
+      return;
+    }
+    if (e.code === "End") {
+      e.preventDefault();
+      animateToParagraph(metrics.length - 1);
+      return;
+    }
+    if (e.key === "+" || e.key === "=" || e.code === "NumpadAdd" || e.code === "ArrowRight") {
+      e.preventDefault();
+      changeSpeed(4);
+      return;
+    }
+    if (e.key === "-" || e.key === "_" || e.code === "NumpadSubtract" || e.code === "ArrowLeft") {
+      e.preventDefault();
+      changeSpeed(-4);
+      return;
+    }
+    if (e.code === "Escape") {
+      state.chromeForcedOff = true;
+      hideChromeNow();
+      if (document.activeElement) document.activeElement.blur();
+      armCursor();
+      return;
+    }
+    if (e.code === "KeyF" && !e.repeat) {
+      e.preventDefault();
+      if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
+      else document.documentElement.requestFullscreen().catch(function () {});
+    }
+  }
+
+  function bind() {
+    document.getElementById("landing-open").addEventListener("click", openFilePicker);
+    document.getElementById("btn-open").addEventListener("click", openFilePicker);
+    statusAction.addEventListener("click", openFilePicker);
+    btnPlay.addEventListener("click", togglePlay);
+    document.getElementById("font-dec").addEventListener("click", function () { changeFont(-1); });
+    document.getElementById("font-inc").addEventListener("click", function () { changeFont(1); });
+
+    speedInput.addEventListener("input", function () {
+      state.speed = clamp(Number(speedInput.value) || SPEED_DEFAULT, SPEED_MIN, SPEED_MAX);
+      speedInput.title = state.speed + " px/s";
+      persist();
+    });
+    measureInput.addEventListener("input", function () {
+      state.measure = clamp(Number(measureInput.value) || MEASURE_DEFAULT, MEASURE_MIN, MEASURE_MAX);
+      applyTypography();
+      persist();
+      afterLayoutChange();
+    });
+
+    fileInput.addEventListener("change", function () {
+      const files = fileInput.files;
+      fileInput.blur();
+      if (files && files.length) handleFiles(files);
+    });
+
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("mousemove", function (e) {
+      armCursor();
+      if (state.mode !== "reading") return;
+      if (state.chromeForcedOff) {
+        if (e.clientY > 96) state.chromeForcedOff = false;
+        return;
+      }
+      if (e.clientY <= 80 || chrome.contains(e.target)) revealChrome();
+      else scheduleChromeHide();
+    }, { passive: true });
+
+    chrome.addEventListener("mouseenter", revealChrome);
+    chrome.addEventListener("mouseleave", scheduleChromeHide);
+
+    scroller.addEventListener("wheel", onUserIntent, { passive: true });
+    scroller.addEventListener("touchstart", onUserIntent, { passive: true });
+    scroller.addEventListener("pointerdown", function () {
+      selecting = true;
+      onUserIntent();
+    });
+    window.addEventListener("pointerup", function () {
+      if (!selecting) return;
+      selecting = false;
+      onUserIntent();
+    }, { passive: true });
+
+    scroller.addEventListener("dblclick", function () {
+      togglePlay();
+      if (state.playing) state.resumeAt = 0;
+    });
+
+    window.addEventListener("dragenter", function (e) {
+      e.preventDefault();
+      dragDepth += 1;
+      document.body.classList.add("is-drag");
+    });
+    window.addEventListener("dragover", function (e) {
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+    });
+    window.addEventListener("dragleave", function () {
+      dragDepth -= 1;
+      if (dragDepth <= 0) {
+        dragDepth = 0;
+        document.body.classList.remove("is-drag");
+      }
+    });
+    window.addEventListener("drop", function (e) {
+      e.preventDefault();
+      dragDepth = 0;
+      document.body.classList.remove("is-drag");
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+        handleFiles(e.dataTransfer.files);
+      }
+    });
+
+    window.addEventListener("resize", afterLayoutChange, { passive: true });
+    document.addEventListener("visibilitychange", function () { state.lastTs = 0; });
+    window.addEventListener("beforeunload", rememberScroll);
+    if (window.history && "scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+  }
+
+  loadStore();
+  applyTypography();
+  bind();
+  showLanding();
+})();
+</script>
+</body>
+</html>
