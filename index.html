@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#F7F7F5" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#151515" media="(prefers-color-scheme: dark)">
 <title>阅读</title>
+<link rel="manifest" href="manifest.json">
 <!--
   纯净专注阅读器
   双击本文件即可打开。文字始终留在浏览器里，不会上传。
@@ -403,17 +404,6 @@
   #font-family:hover,
   #font-family:focus-visible { opacity: 1; }
 
-  #btn-download {
-    color: inherit;
-    text-decoration: none;
-    opacity: 0.72;
-    min-height: 32px;
-    display: inline-flex;
-    align-items: center;
-  }
-  #btn-download:hover,
-  #btn-download:focus-visible { opacity: 1; }
-
   :focus-visible { outline: 1px solid color-mix(in srgb, var(--fg) 35%, transparent); outline-offset: 3px; }
   ::selection { background: rgba(29, 29, 31, 0.12); }
 
@@ -476,10 +466,9 @@
         <li><span>Esc</span><span>关闭说明，或隐藏控制栏</span></li>
       </ul>
       <p>双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。</p>
-      <p>鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或下载 Chrome 版。右下角很淡的数字，是现在读到哪里。</p>
+      <p>鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字，是现在读到哪里。</p>
       <h2>文件</h2>
       <p>文字只在这台浏览器里打开，不会上传。刷新后会记住速度、字号、字体、宽度，以及同一个文件名的阅读位置。文件本身不会被保存。</p>
-      <p>顶部的 Chrome 会下载扩展。解压后，在扩展程序页打开开发者模式，再选择加载已解压的扩展程序。</p>
       <p>整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
     </div>
   </div>
@@ -528,7 +517,6 @@
         <input id="measure" type="range" min="600" max="840" step="20" value="720" aria-label="阅读宽度">
       </label>
       <button type="button" id="btn-full">全屏</button>
-      <a id="btn-download" href="PureReader-chrome.zip" download="PureReader-chrome.zip" title="下载 Chrome 版">Chrome</a>
     </div>
   </header>
 
@@ -1754,6 +1742,10 @@
     if (window.history && "scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
     }
+  }
+
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
   }
 
   loadStore();
