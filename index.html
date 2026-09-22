@@ -14,6 +14,16 @@
   阅读 PDF 时会从 jsDelivr 加载 PDF.js；TXT 不需要网络。
 -->
 <style>
+  @property --bg {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #F7F7F5;
+  }
+  @property --fg {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #1D1D1F;
+  }
   :root {
     --bg: #F7F7F5;
     --fg: #1D1D1F;
@@ -23,6 +33,7 @@
     --reading-font: "Songti SC", "Noto Serif SC", STSong, "Source Han Serif SC", "Noto Serif CJK SC", PMingLiU, serif;
     --chrome: color-mix(in srgb, var(--bg) 76%, transparent);
     color-scheme: light;
+    transition: --bg 0.5s ease, --fg 0.5s ease;
   }
 
   :root[data-theme="dark"] {
@@ -210,7 +221,6 @@
     z-index: 8;
     top: 54px;
     right: 28px;
-    width: min(320px, calc(100% - 40px));
     opacity: 0;
     visibility: hidden;
     transform: translateY(-6px);
@@ -218,6 +228,29 @@
     transition: opacity 0.28s ease, transform 0.28s ease, visibility 0s linear 0.28s;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
   }
+  #history,
+  #notes { width: min(320px, calc(100% - 40px)); }
+  #bookmarks {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 16px;
+    width: max-content;
+    max-width: calc(100% - 40px);
+  }
+  #bookmark-panel { width: min(320px, calc(100vw - 180px)); flex: none; }
+  #bookmark-notes {
+    flex: none;
+    margin-top: 6px;
+    padding: 8px 2px;
+    font-size: 13px;
+    line-height: 1.45;
+    letter-spacing: 0.04em;
+    opacity: 0.72;
+    white-space: nowrap;
+  }
+  #bookmark-notes:hover,
+  #bookmark-notes:focus-visible { opacity: 1; }
   #history.is-open,
   #bookmarks.is-open,
   #notes.is-open {
@@ -951,6 +984,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    :root { transition: none; }
     #chrome, #guide, #changelog, #history, #bookmarks, #notes, #stats, #status { transition: none; }
   }
 </style>
@@ -1004,7 +1038,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.5</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.5.1</span></button></p>
     </div>
   </div>
 
@@ -1054,7 +1088,6 @@
       <button type="button" id="btn-open" data-i18n="open">打开</button>
       <button type="button" id="btn-history" data-i18n="history">历史</button>
       <button type="button" id="btn-bookmarks" data-i18n="bookmarks">书签</button>
-      <button type="button" id="btn-notes" data-i18n="notes">读书笔记</button>
       <button type="button" id="btn-play" class="is-paused" data-i18n-aria="pause" aria-label="暂停">
         <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M8 5.5v13M16 5.5v13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
@@ -1111,6 +1144,7 @@
       <button type="button" id="bookmark-add" data-i18n="bookmarkAdd">添加</button>
       <div id="bookmark-list"></div>
     </div>
+    <button type="button" id="bookmark-notes" data-i18n="notes">读书笔记</button>
   </div>
 
   <div id="notes">
@@ -1153,8 +1187,21 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "1.5";
+  const VERSION = "1.5.1";
   const CHANGELOG = [
+    {
+      version: "1.5.1",
+      zh: [
+        "读书笔记从顶栏挪到书签窗口的右边。",
+        "按 Esc 关掉窗口后，按钮周围不再留下黑框。",
+        "切换黑白时，颜色会慢慢过渡。"
+      ],
+      en: [
+        "Notes leave the top bar and sit to the right of the bookmark window.",
+        "Closing a window with Esc no longer leaves a box around the button.",
+        "Light and dark ease from one into the other."
+      ]
+    },
     {
       version: "1.5",
       zh: [
@@ -1487,7 +1534,7 @@
       notesLoose: "未分类",
       notesHighlight: "高亮",
       notesNeedSelection: "先在正文里选中一段文字。",
-      notesEmpty: "还没有读书笔记。在书签旁点「读书笔记」。",
+      notesEmpty: "还没有读书笔记。打开书签，点右边的「读书笔记」。",
       notesNoHit: "没有找到。",
       notesBody: "写下这一段。",
       notesRemoveFolder: "删除",
@@ -1575,7 +1622,7 @@
       notesLoose: "Unsorted",
       notesHighlight: "Highlight",
       notesNeedSelection: "Select a passage in the text first.",
-      notesEmpty: "No notes yet. Use Notes beside a bookmark.",
+      notesEmpty: "No notes yet. Open bookmarks, then Notes on the right.",
       notesNoHit: "Nothing matches.",
       notesBody: "Write about this passage.",
       notesRemoveFolder: "Remove",
@@ -3482,6 +3529,11 @@
     }
   }
 
+  function releaseFocus() {
+    const el = document.activeElement;
+    if (el && el !== document.body && typeof el.blur === "function") el.blur();
+  }
+
   function onKey(e) {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (notesOpen()) {
@@ -3490,6 +3542,7 @@
       if (e.code === "Escape") {
         e.preventDefault();
         closeNotes();
+        releaseFocus();
         return;
       }
       if (e.code === "Space" && state.mode === "reading") {
@@ -3502,6 +3555,7 @@
       if (e.code === "Escape") {
         e.preventDefault();
         closeChangelog();
+        releaseFocus();
       } else if (e.code === "Space") {
         e.preventDefault();
       }
@@ -3511,6 +3565,7 @@
       if (e.code === "Escape") {
         e.preventDefault();
         closeStats();
+        releaseFocus();
         return;
       }
       if (e.code === "Space" && state.mode === "reading") {
@@ -3525,6 +3580,7 @@
       if (e.code === "Escape") {
         e.preventDefault();
         closeBookmarks();
+        releaseFocus();
       }
       return;
     }
@@ -3532,6 +3588,7 @@
       if (e.code === "Escape") {
         e.preventDefault();
         closeHistory();
+        releaseFocus();
       }
       return;
     }
@@ -3539,6 +3596,7 @@
       if (e.code === "Escape") {
         e.preventDefault();
         closeGuide();
+        releaseFocus();
       }
       return;
     }
@@ -3587,7 +3645,7 @@
     if (e.code === "Escape") {
       state.chromeForcedOff = true;
       hideChromeNow();
-      if (document.activeElement) document.activeElement.blur();
+      releaseFocus();
       armCursor();
       return;
     }
@@ -3645,9 +3703,8 @@
       if (bookmarksOpen()) closeBookmarks();
       else openBookmarkPanel();
     });
-    document.getElementById("btn-notes").addEventListener("click", function () {
-      if (notesOpen()) closeNotes();
-      else openNotes();
+    document.getElementById("bookmark-notes").addEventListener("click", function () {
+      openNotes();
     });
     document.getElementById("btn-theme").addEventListener("click", toggleTheme);
     document.getElementById("bookmark-add").addEventListener("click", addBookmark);
