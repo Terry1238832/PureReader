@@ -492,12 +492,6 @@
     font-size: var(--font);
     line-height: var(--leading);
     font-family: var(--reading-font);
-    clip-path: inset(0 0 0 0);
-    transition: opacity 1s ease, clip-path 1.05s ease;
-  }
-  body.is-opening #reader {
-    opacity: 0;
-    clip-path: inset(40% 0 40% 0);
   }
 
   #reader p {
@@ -750,7 +744,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    #chrome, #guide, #changelog, #history, #bookmarks, #stats, #status, #reader { transition: none; }
+    #chrome, #guide, #changelog, #history, #bookmarks, #stats, #status { transition: none; }
   }
 </style>
 </head>
@@ -797,7 +791,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.2</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.2.1</span></button></p>
     </div>
   </div>
 
@@ -920,8 +914,13 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "1.2";
+  const VERSION = "1.2.1";
   const CHANGELOG = [
+    {
+      version: "1.2.1",
+      zh: ["整理完成之后，正文慢慢浮现，不再一下子跳出来。"],
+      en: ["After the text is ready, the words fade into place instead of appearing at once."]
+    },
     {
       version: "1.2",
       zh: ["整理完成之后，正文从中间缓缓打开。"],
@@ -1021,6 +1020,7 @@
   let pdfjsPromise = null;
   let openJob = 0;
   let revealToken = 0;
+  let opening = null;
   let historyItems = [];
   let charLens = [];
 
@@ -1336,6 +1336,10 @@
     state.playing = false;
     state.anim = null;
     revealToken += 1;
+    opening = null;
+    reader.style.transform = "";
+    focusLine.style.opacity = "";
+    progressEl.style.opacity = "";
     document.body.classList.remove("is-reading", "is-opening", "cursor-hidden");
     statusEl.classList.remove("is-leaving", "is-dismissing");
     document.title = t("appTitle");
@@ -1925,17 +1929,26 @@
     reader.replaceChildren(frag);
   }
 
+  function layoutTop(el) {
+    let top = 0;
+    let node = el;
+    let guard = 0;
+    while (node && node !== scroller && guard < 8) {
+      top += node.offsetTop;
+      node = node.offsetParent;
+      guard += 1;
+    }
+    return top;
+  }
+
   function measure() {
     const nodes = reader.children;
-    const base = scroller.getBoundingClientRect().top;
-    const scrollTop = scroller.scrollTop;
     const next = new Array(nodes.length);
     for (let i = 0; i < nodes.length; i++) {
-      const rect = nodes[i].getBoundingClientRect();
       next[i] = {
         el: nodes[i],
-        top: rect.top - base + scrollTop,
-        height: rect.height,
+        top: layoutTop(nodes[i]),
+        height: nodes[i].offsetHeight,
         op: -1
       };
     }
@@ -1959,12 +1972,34 @@
     return clamp(Math.min(byHop, spatial), 0.2, 1);
   }
 
+  function openingBlend(now) {
+    if (!opening) return 1;
+    if (now < opening.start) {
+      reader.style.transform = "translateY(16px)";
+      return 0;
+    }
+    const raw = clamp((now - opening.start) / opening.duration, 0, 1);
+    const eased = raw * raw * (3 - 2 * raw);
+    if (raw >= 1) {
+      opening = null;
+      reader.style.transform = "";
+      focusLine.style.opacity = "";
+      progressEl.style.opacity = "";
+      return 1;
+    }
+    reader.style.transform = "translateY(" + ((1 - eased) * 16).toFixed(2) + "px)";
+    focusLine.style.opacity = (0.028 * eased).toFixed(3);
+    progressEl.style.opacity = (0.3 * eased).toFixed(3);
+    return eased;
+  }
+
   function applyFocus() {
     if (!metrics.length || state.mode !== "reading") return;
     const vh = scroller.clientHeight || window.innerHeight;
     const center = scroller.scrollTop + vh / 2;
     const from = scroller.scrollTop - vh * 0.15;
     const to = scroller.scrollTop + vh * 1.15;
+    const blend = openingBlend(performance.now());
 
     let lo = 0;
     let hi = metrics.length - 1;
@@ -1991,8 +2026,8 @@
 
     for (let i = lo; i < end; i++) {
       const mid = metrics[i].top + metrics[i].height / 2;
-      const op = opacityFor(i, active, Math.abs(mid - center), vh);
-      if (metrics[i].op < 0 || Math.abs(metrics[i].op - op) > 0.02) {
+      const op = opacityFor(i, active, Math.abs(mid - center), vh) * blend;
+      if (metrics[i].op < 0 || Math.abs(metrics[i].op - op) > 0.006) {
         metrics[i].op = op;
         metrics[i].el.style.opacity = op.toFixed(3);
       }
@@ -2204,25 +2239,28 @@
   function playOpening() {
     const token = ++revealToken;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const nodes = reader.children;
     if (reduce) {
       document.body.classList.remove("is-opening");
       statusEl.hidden = true;
       statusEl.classList.remove("is-leaving", "is-dismissing");
+      opening = null;
+      reader.style.transform = "";
       state.resumeAt = 0;
       return;
     }
-    state.resumeAt = performance.now() + 1180;
+    for (let i = 0; i < nodes.length; i++) nodes[i].style.opacity = "0";
+    const lead = 280;
+    const duration = 1700;
+    opening = { start: performance.now() + lead, duration: duration };
+    state.resumeAt = opening.start + duration;
     statusEl.classList.add("is-dismissing");
-    window.setTimeout(function () {
-      if (token !== revealToken) return;
-      document.body.classList.remove("is-opening");
-      statusEl.classList.add("is-leaving");
-    }, 220);
     window.setTimeout(function () {
       if (token !== revealToken) return;
       statusEl.hidden = true;
       statusEl.classList.remove("is-leaving", "is-dismissing");
-    }, 1200);
+      document.body.classList.remove("is-opening");
+    }, lead);
   }
 
   function enterReading(paragraphs) {
@@ -2246,9 +2284,9 @@
     scroller.scrollTop = saved && typeof saved.scroll === "number" ? saved.scroll : 0;
     state.scrollPos = scroller.scrollTop;
     measure();
+    playOpening();
     applyFocus();
     updateProgress();
-    playOpening();
     startLoop();
     armCursor();
     if (document.fonts && document.fonts.ready) {
@@ -2417,6 +2455,10 @@
     state.fileName = name || t("untitled");
     state.mode = "processing";
     revealToken += 1;
+    opening = null;
+    reader.style.transform = "";
+    focusLine.style.opacity = "";
+    progressEl.style.opacity = "";
     document.body.classList.remove("is-reading", "is-opening", "cursor-hidden");
     statusEl.classList.remove("is-leaving", "is-dismissing");
     landing.hidden = true;
