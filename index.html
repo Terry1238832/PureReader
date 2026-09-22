@@ -431,8 +431,7 @@
     opacity: 0.4;
     white-space: nowrap;
   }
-  .notes-dir-item:hover,
-  .notes-dir-item.is-folder { cursor: grab; }
+  .notes-dir-item.is-folder { cursor: grab; user-select: none; -webkit-user-select: none; }
   .notes-dir-rename:hover,
   .notes-dir-rename:focus-visible,
   .notes-dir-remove:hover,
@@ -554,6 +553,8 @@
     font-size: 14px;
     opacity: 0.82;
     cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
   }
   .note-drag-ghost {
     position: fixed;
@@ -1089,7 +1090,20 @@
   #font-family:focus-visible { opacity: 1; }
 
   :focus-visible { outline: 1px solid color-mix(in srgb, var(--fg) 35%, transparent); outline-offset: 3px; }
+  input:focus,
+  input:focus-visible,
+  textarea:focus,
+  textarea:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
   ::selection { background: rgba(29, 29, 31, 0.12); }
+
+  body.is-dragging,
+  body.is-dragging * {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+  }
 
   body.is-reading.cursor-hidden,
   body.is-reading.cursor-hidden * { cursor: none !important; }
@@ -1174,7 +1188,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.6</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.6.1</span></button></p>
     </div>
   </div>
 
@@ -1328,8 +1342,19 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "1.6";
+  const VERSION = "1.6.1";
   const CHANGELOG = [
+    {
+      version: "1.6.1",
+      zh: [
+        "改字的时候只留下下面的横线。",
+        "按住拖动时，不会把别的文字选中。"
+      ],
+      en: [
+        "Editing text shows only the line underneath.",
+        "Dragging no longer selects other words."
+      ]
+    },
     {
       version: "1.6",
       zh: [
@@ -3648,6 +3673,9 @@
     window.removeEventListener("pointermove", moveDrag);
     window.removeEventListener("pointerup", endDrag);
     window.removeEventListener("pointercancel", endDrag);
+    document.body.classList.remove("is-dragging");
+    const sel = window.getSelection();
+    if (sel) sel.removeAllRanges();
     const press = dragPress;
     dragPress = null;
     const ghost = document.getElementById("note-drag-ghost");
@@ -3671,7 +3699,13 @@
     const dx = e.clientX - dragPress.x;
     const dy = e.clientY - dragPress.y;
     if (!dragPress.dragging && dx * dx + dy * dy < 25) return;
-    dragPress.dragging = true;
+    if (!dragPress.dragging) {
+      dragPress.dragging = true;
+      document.body.classList.add("is-dragging");
+      const sel = window.getSelection();
+      if (sel) sel.removeAllRanges();
+    }
+    if (e.cancelable) e.preventDefault();
     const ghost = dragGhost();
     ghost.hidden = false;
     ghost.textContent = dragPress.label;
@@ -3684,6 +3718,7 @@
 
   function armDrag(e, kind, id, label) {
     if (e.button !== 0 || dragPress) return;
+    if (e.cancelable) e.preventDefault();
     dragPress = { kind: kind, id: id, label: label, x: e.clientX, y: e.clientY, pointerId: e.pointerId, dragging: false };
     window.addEventListener("pointermove", moveDrag);
     window.addEventListener("pointerup", endDrag);
