@@ -229,31 +229,27 @@
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
   }
   #history,
+  #bookmarks,
   #notes { width: min(320px, calc(100% - 40px)); }
-  #bookmarks {
+  .bookmark-head {
     display: flex;
-    align-items: flex-start;
-    justify-content: flex-end;
-    gap: 16px;
-    width: max-content;
-    max-width: calc(100% - 40px);
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
   }
-  #bookmark-panel { width: min(320px, calc(100vw - 180px)); flex: none; }
+  #bookmark-add { width: auto; flex: 1; min-width: 0; }
   #bookmark-notes {
     flex: none;
-    padding: 14px 16px;
+    width: auto;
+    padding: 8px 16px 8px 8px;
     font-size: 13px;
     line-height: 1.45;
     letter-spacing: 0.04em;
-    color: color-mix(in srgb, var(--fg) 72%, transparent);
+    opacity: 0.72;
     white-space: nowrap;
-    background: color-mix(in srgb, var(--bg) 96%, transparent);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 16px 40px color-mix(in srgb, var(--fg) 6%, transparent);
   }
   #bookmark-notes:hover,
-  #bookmark-notes:focus-visible { color: var(--fg); }
+  #bookmark-notes:focus-visible { opacity: 1; }
   #history.is-open,
   #bookmarks.is-open,
   #notes.is-open {
@@ -298,6 +294,7 @@
   #history-panel button:focus-visible,
   #bookmark-add:hover,
   #bookmark-add:focus-visible { opacity: 1; }
+  .bookmark-head #bookmark-add { width: auto; }
   #history-panel p,
   #bookmark-list .bookmark-empty { opacity: 0.42; }
 
@@ -1041,7 +1038,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.5.2</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.5.3</span></button></p>
     </div>
   </div>
 
@@ -1144,10 +1141,12 @@
 
   <div id="bookmarks">
     <div id="bookmark-panel">
-      <button type="button" id="bookmark-add" data-i18n="bookmarkAdd">添加</button>
+      <div class="bookmark-head">
+        <button type="button" id="bookmark-add" data-i18n="bookmarkAdd">添加</button>
+        <button type="button" id="bookmark-notes" data-i18n="notes">读书笔记</button>
+      </div>
       <div id="bookmark-list"></div>
     </div>
-    <button type="button" id="bookmark-notes" data-i18n="notes">读书笔记</button>
   </div>
 
   <div id="notes">
@@ -1190,8 +1189,17 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "1.5.2";
+  const VERSION = "1.5.3";
   const CHANGELOG = [
+    {
+      version: "1.5.3",
+      zh: [
+        "「读书笔记」放在书签窗口的右上角。"
+      ],
+      en: [
+        "Notes sit in the top-right corner of the bookmark window."
+      ]
+    },
     {
       version: "1.5.2",
       zh: [
@@ -1546,7 +1554,7 @@
       notesLoose: "未分类",
       notesHighlight: "高亮",
       notesNeedSelection: "先在正文里选中一段文字。",
-      notesEmpty: "还没有读书笔记。打开书签，点右边的「读书笔记」。",
+      notesEmpty: "还没有读书笔记。打开书签，点右上角的「读书笔记」。",
       notesNoHit: "没有找到。",
       notesBody: "写下这一段。",
       notesRemoveFolder: "删除",
@@ -1634,7 +1642,7 @@
       notesLoose: "Unsorted",
       notesHighlight: "Highlight",
       notesNeedSelection: "Select a passage in the text first.",
-      notesEmpty: "No notes yet. Open bookmarks, then Notes on the right.",
+      notesEmpty: "No notes yet. Open bookmarks, then Notes in the corner.",
       notesNoHit: "Nothing matches.",
       notesBody: "Write about this passage.",
       notesRemoveFolder: "Remove",
