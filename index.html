@@ -340,26 +340,36 @@
   .chapter-item:hover,
   .chapter-item:focus-visible,
   .chapter-item.is-current { opacity: 1; }
-  #selection-note {
+  #selection-note,
+  #chapter-end {
     position: fixed;
     z-index: 9;
+    display: flex;
     margin: 0;
+    background: color-mix(in srgb, var(--bg) 96%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 16px 40px color-mix(in srgb, var(--fg) 6%, transparent);
   }
-  #selection-note button {
+  #chapter-end {
+    left: 50%;
+    bottom: 36px;
+    transform: translateX(-50%);
+  }
+  #selection-note button,
+  #chapter-end button {
     padding: 8px 14px;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
     font-size: 13px;
     line-height: 1.45;
     letter-spacing: 0.04em;
-    background: color-mix(in srgb, var(--bg) 96%, transparent);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 16px 40px color-mix(in srgb, var(--fg) 6%, transparent);
     opacity: 0.86;
     white-space: nowrap;
   }
   #selection-note button:hover,
-  #selection-note button:focus-visible { opacity: 1; }
+  #selection-note button:focus-visible,
+  #chapter-end button:hover,
+  #chapter-end button:focus-visible { opacity: 1; }
   #history.is-open,
   #bookmarks.is-open,
   #chapters.is-open,
@@ -701,14 +711,38 @@
     gap: 10px;
     flex-wrap: wrap;
   }
+  .note-chapter {
+    margin: 0 0 6px;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    opacity: 0.45;
+  }
+  .note-react {
+    display: flex;
+    gap: 14px;
+    margin: 0 0 8px;
+  }
+  .note-react button {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    opacity: 0.38;
+  }
+  .note-react button.is-on { opacity: 1; }
+  .note-react button:hover,
+  .note-react button:focus-visible { opacity: 0.9; }
   .note-highlight,
+  .note-step,
   .note-folder-pick {
     font-size: 12px;
     letter-spacing: 0.06em;
     opacity: 0.5;
   }
+  .note-steps { display: inline-flex; gap: 8px; align-items: center; }
+  .note-step { font-size: 15px; line-height: 1; padding: 0 1px; }
   .note-highlight:hover,
   .note-highlight:focus-visible,
+  .note-step:hover,
+  .note-step:focus-visible,
   .note-rename:hover,
   .note-rename:focus-visible,
   .note-remove:hover,
@@ -1285,12 +1319,12 @@
         <li><span>Esc</span><span data-i18n="keyEsc">关闭说明，或隐藏控制栏</span></li>
       </ul>
       <p data-i18n="guideMouse">双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。</p>
-      <p data-i18n="guideChrome">鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。书签旁点「读书笔记」之后，它不再是书签，会归到读书笔记里。选中正文后，可以添加读书笔记。点一下会高亮这段，并开始写。添加旁边可以导入、导出这一本的书签和读书笔记。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。</p>
+      <p data-i18n="guideChrome">鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。书签旁点「读书笔记」之后，它不再是书签，会归到读书笔记里。选中正文后，可以点赞、点踩，或添加读书笔记。点赞和点踩可以不写字。笔记里的高亮可以扩大，或去掉选中的一段。一章读完，可以写下读后感，或进入下一章。读后感会一起导出。添加旁边可以导入、导出这一本的书签和读书笔记。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。</p>
       <h2 data-i18n="filesH">文件</h2>
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 和 EPUB 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.9</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.0</span></button></p>
     </div>
   </div>
 
@@ -1439,7 +1473,13 @@
   </div>
 
   <div id="selection-note" hidden>
+    <button type="button" id="selection-note-up" data-i18n="noteUp">赞</button>
+    <button type="button" id="selection-note-down" data-i18n="noteDown">踩</button>
     <button type="button" id="selection-note-add" data-i18n="selectionNote">添加读书笔记</button>
+  </div>
+  <div id="chapter-end" hidden>
+    <button type="button" id="chapter-end-note" data-i18n="chapterNote">写下读后感</button>
+    <button type="button" id="chapter-end-next" data-i18n="chapterNext">下一章</button>
   </div>
   <input id="file" type="file" accept=".pdf,.txt,.epub,.eupd,.eupb,text/plain,application/pdf,application/epub+zip" hidden>
   <input id="bookmark-file" type="file" accept="application/json,.json" hidden>
@@ -1463,8 +1503,21 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "1.9";
+  const VERSION = "2.0";
   const CHANGELOG = [
+    {
+      version: "2.0",
+      zh: [
+        "读书笔记可以只点赞或点踩，也可以同时写字。",
+        "高亮可以扩大，也可以去掉选中的一段。",
+        "读到章节末尾，可以写读后感，或进入下一章。读后感会一起导出。"
+      ],
+      en: [
+        "A note can be only a like or a dislike, or words as well.",
+        "A highlight can grow, or lose the part you select.",
+        "At the end of a chapter, write about it or go on. That note is included when you export."
+      ]
+    },
     {
       version: "1.9",
       zh: [
@@ -1714,6 +1767,8 @@
   let noteQuery = "";
   let noteFocusId = "";
   let noteHintId = "";
+  let noteHintKind = "";
+  let chapterEndHold = -1;
   let noteFolder = "all";
   let importPending = null;
   let importMessage = null;
@@ -1910,7 +1965,7 @@
       keyF: "全屏",
       keyEsc: "关闭说明，或隐藏控制栏",
       guideMouse: "双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。",
-      guideChrome: "鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。书签旁点「读书笔记」之后，它不再是书签，会归到读书笔记里。选中正文后，可以添加读书笔记。点一下会高亮这段，并开始写。添加旁边可以导入、导出这一本的书签和读书笔记。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。",
+      guideChrome: "鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。书签旁点「读书笔记」之后，它不再是书签，会归到读书笔记里。选中正文后，可以点赞、点踩，或添加读书笔记。点赞和点踩可以不写字。笔记里的高亮可以扩大，或去掉选中的一段。一章读完，可以写下读后感，或进入下一章。读后感会一起导出。添加旁边可以导入、导出这一本的书签和读书笔记。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。",
       filesH: "文件",
       guideFiles: "文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。",
       guidePdf: "整理 PDF 时会从网络加载解析组件。TXT 和 EPUB 不需要网络。",
@@ -1943,7 +1998,14 @@
       bookmarkRename: "改名",
       bookmarkRemove: "删除",
       notes: "读书笔记",
+      noteUp: "赞",
+      noteDown: "踩",
       selectionNote: "添加读书笔记",
+      noteGrow: "增加高亮",
+      noteShrink: "去掉这段高亮",
+      notesTrim: "先选中要去掉的一段。",
+      chapterNote: "写下读后感",
+      chapterNext: "下一章",
       notesSearch: "搜索",
       notesFolder: "文件夹",
       notesFolders: "文件夹",
@@ -1956,6 +2018,7 @@
       notesFolderEmpty: "这个文件夹还是空的。",
       notesNoHit: "没有找到。",
       notesBody: "写下这一段。",
+      notesChapterBody: "写下这一章。",
       notesRemoveFolder: "删除",
       statRead: "已读",
       statUnread: "未读",
@@ -2022,7 +2085,7 @@
       keyF: "Full screen",
       keyEsc: "Close the guide, or hide the controls",
       guideMouse: "Double-click the text to pause or continue. The wheel lets auto-scroll step aside for a moment.",
-      guideChrome: "Move the pointer to the top to change speed, size, typeface, and width, to go full screen, or to bookmark this text. A new bookmark is named with the date and time, and the name can be changed. Choosing Notes beside a bookmark moves it into the notes. Selecting a passage offers a note. Choosing it highlights the passage and opens the note to write. Beside Add, this book's marks and notes can be imported or exported. In Chrome, an install icon appears at the right of the address bar. The faint number at the lower right is how far you have read. Click it to see how many words.",
+      guideChrome: "Move the pointer to the top to change speed, size, typeface, and width, to go full screen, or to bookmark this text. A new bookmark is named with the date and time, and the name can be changed. Choosing Notes beside a bookmark moves it into the notes. Selecting a passage offers a like, a dislike, or a note. A like or dislike needs no words. A highlight can grow, or lose the part you select. At the end of a chapter, write about it or go on. That note is included when you export. Beside Add, this book's marks and notes can be imported or exported. In Chrome, an install icon appears at the right of the address bar. The faint number at the lower right is how far you have read. Click it to see how many words.",
       filesH: "Files",
       guideFiles: "The text stays in this browser and is not uploaded. Recently opened files can be opened again. Speed, size, typeface, width, and reading position are remembered.",
       guidePdf: "Reading a PDF loads a parser from the network. TXT and EPUB do not.",
@@ -2055,7 +2118,14 @@
       bookmarkRename: "Rename",
       bookmarkRemove: "Remove",
       notes: "Notes",
+      noteUp: "Like",
+      noteDown: "Dislike",
       selectionNote: "Add a note",
+      noteGrow: "Grow the highlight",
+      noteShrink: "Remove this part of the highlight",
+      notesTrim: "Select the part of the highlight to remove.",
+      chapterNote: "Write about this chapter",
+      chapterNext: "Next chapter",
       notesSearch: "Search",
       notesFolder: "Folder",
       notesFolders: "Folders",
@@ -2068,6 +2138,7 @@
       notesFolderEmpty: "This folder is empty.",
       notesNoHit: "Nothing matches.",
       notesBody: "Write about this passage.",
+      notesChapterBody: "Write about this chapter.",
       notesRemoveFolder: "Remove",
       statRead: "Read",
       statUnread: "Still to read",
@@ -2182,6 +2253,7 @@
     document.body.classList.remove("is-reading", "is-opening", "cursor-hidden");
     statusEl.classList.remove("is-leaving", "is-dismissing", "is-swap");
     closeNotes();
+    hideChapterEnd();
     document.title = t("appTitle");
     landing.hidden = false;
     statusEl.hidden = true;
@@ -3246,6 +3318,7 @@
     }
     state.active = active;
     markCurrentChapter();
+    syncChapterEnd();
 
     for (let i = lo; i < end; i++) {
       const mid = metrics[i].top + metrics[i].height / 2;
@@ -3411,7 +3484,7 @@
         state.anim = null;
         state.resumeAt = performance.now() + 900;
       }
-    } else if (state.playing && performance.now() >= state.resumeAt && !selectionNoteOn()) {
+    } else if (state.playing && performance.now() >= state.resumeAt && !selectionNoteOn() && !chapterEndOn()) {
       const max = maxScroll();
       state.scrollPos = Math.min(max, state.scrollPos + state.speed * dt);
       scroller.scrollTop = state.scrollPos;
@@ -3607,6 +3680,7 @@
   }
 
   function togglePlay() {
+    if (!state.playing && chapterEndOn()) dismissChapterEnd();
     state.playing = !state.playing;
     if (state.playing) {
       state.resumeAt = 0;
@@ -3769,6 +3843,7 @@
     closeNotes();
     closeChapters();
     hideSelectionNote();
+    hideChapterEnd();
     state.fileName = name || t("untitled");
     state.kind = kind;
     state.chapters = [];
@@ -3868,9 +3943,9 @@
   function armCursor() {
     clearTimeout(cursorTimer);
     document.body.classList.remove("cursor-hidden");
-    if (state.mode !== "reading" || chrome.classList.contains("visible") || selectionNoteOn()) return;
+    if (state.mode !== "reading" || chrome.classList.contains("visible") || selectionNoteOn() || chapterEndOn()) return;
     cursorTimer = setTimeout(function () {
-      if (state.mode === "reading" && !chrome.classList.contains("visible") && !selectionNoteOn()) {
+      if (state.mode === "reading" && !chrome.classList.contains("visible") && !selectionNoteOn() && !chapterEndOn()) {
         document.body.classList.add("cursor-hidden");
       }
     }, CURSOR_HIDE);
@@ -4121,12 +4196,25 @@
     };
   }
 
+  function cleanSpan(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const startParagraph = numOrNull(raw.startParagraph);
+    const endParagraph = numOrNull(raw.endParagraph);
+    if (startParagraph === null || endParagraph === null) return null;
+    return {
+      startParagraph: startParagraph,
+      startOffset: Number(raw.startOffset) || 0,
+      endParagraph: endParagraph,
+      endOffset: Number(raw.endOffset) || 0
+    };
+  }
+
   function cleanNote(raw) {
     if (!raw || typeof raw !== "object") return null;
     if (typeof raw.id !== "string" && typeof raw.id !== "number") return null;
     const id = String(raw.id);
     if (!id) return null;
-    return {
+    const note = {
       id: id,
       name: typeof raw.name === "string" ? raw.name : "",
       scroll: Number(raw.scroll) || 0,
@@ -4134,13 +4222,18 @@
       at: Number(raw.at) || 0,
       folderId: typeof raw.folderId === "string" ? raw.folderId : "",
       body: typeof raw.body === "string" ? raw.body : "",
+      reaction: raw.reaction === "up" || raw.reaction === "down" ? raw.reaction : "",
       color: NOTE_COLORS.indexOf(raw.color) >= 0 ? raw.color : "sand",
       quote: typeof raw.quote === "string" ? raw.quote : "",
+      chapterTitle: typeof raw.chapterTitle === "string" ? raw.chapterTitle : "",
+      chapterParagraph: numOrNull(raw.chapterParagraph),
       startParagraph: numOrNull(raw.startParagraph),
       startOffset: Number(raw.startOffset) || 0,
       endParagraph: numOrNull(raw.endParagraph),
       endOffset: Number(raw.endOffset) || 0
     };
+    if (Array.isArray(raw.spans)) note.spans = raw.spans.map(cleanSpan).filter(Boolean);
+    return note;
   }
 
   function cleanFolder(raw) {
@@ -4178,16 +4271,22 @@
     return a.id === b.id && (a.name || "") === (b.name || "") && a.paragraph === b.paragraph && (Number(a.scroll) || 0) === (Number(b.scroll) || 0);
   }
 
+  function spanKey(note) {
+    return JSON.stringify(noteSpans(note).map(function (span) {
+      return [span.startParagraph, span.startOffset, span.endParagraph, span.endOffset];
+    }));
+  }
+
   function sameNote(a, b) {
     return sameMark(a, b)
       && (a.folderId || "") === (b.folderId || "")
       && (a.body || "") === (b.body || "")
       && (a.quote || "") === (b.quote || "")
+      && (a.reaction || "") === (b.reaction || "")
+      && (a.chapterTitle || "") === (b.chapterTitle || "")
+      && (a.chapterParagraph == null ? b.chapterParagraph == null : a.chapterParagraph === b.chapterParagraph)
       && a.color === b.color
-      && a.startParagraph === b.startParagraph
-      && a.endParagraph === b.endParagraph
-      && (Number(a.startOffset) || 0) === (Number(b.startOffset) || 0)
-      && (Number(a.endOffset) || 0) === (Number(b.endOffset) || 0);
+      && spanKey(a) === spanKey(b);
   }
 
   function findClash(list, item) {
@@ -4465,6 +4564,7 @@
       at: mark.at || Date.now(),
       folderId: "",
       body: "",
+      reaction: "",
       color: "sand",
       quote: "",
       startParagraph: null,
@@ -4536,20 +4636,21 @@
     const notes = entry && Array.isArray(entry.notes) ? entry.notes : [];
     const byParagraph = [];
     notes.forEach(function (note) {
-      if (typeof note.startParagraph !== "number" || typeof note.endParagraph !== "number") return;
-      for (let i = note.startParagraph; i <= note.endParagraph && i < paragraphTexts.length; i++) {
-        const text = paragraphTexts[i] || "";
-        const start = i === note.startParagraph ? note.startOffset : 0;
-        const end = i === note.endParagraph ? note.endOffset : text.length;
-        if (end <= start) continue;
-        if (!byParagraph[i]) byParagraph[i] = [];
-        byParagraph[i].push({
-          start: Math.max(0, start),
-          end: Math.min(text.length, end),
-          color: NOTE_COLORS.indexOf(note.color) >= 0 ? note.color : "sand",
-          id: note.id
-        });
-      }
+      noteSpans(note).forEach(function (span) {
+        for (let i = span.startParagraph; i <= span.endParagraph && i < paragraphTexts.length; i++) {
+          const text = paragraphTexts[i] || "";
+          const start = i === span.startParagraph ? span.startOffset : 0;
+          const end = i === span.endParagraph ? span.endOffset : text.length;
+          if (end <= start) continue;
+          if (!byParagraph[i]) byParagraph[i] = [];
+          byParagraph[i].push({
+            start: Math.max(0, start),
+            end: Math.min(text.length, end),
+            color: NOTE_COLORS.indexOf(note.color) >= 0 ? note.color : "sand",
+            id: note.id
+          });
+        }
+      });
     });
     for (let i = 0; i < reader.children.length; i++) {
       const text = paragraphTexts[i] || "";
@@ -4597,23 +4698,248 @@
     applyFocus();
   }
 
+  function posCmp(p1, o1, p2, o2) {
+    if (p1 !== p2) return p1 < p2 ? -1 : 1;
+    if (o1 !== o2) return o1 < o2 ? -1 : 1;
+    return 0;
+  }
+
+  function spanValid(span) {
+    return !!(span && typeof span.startParagraph === "number" && typeof span.endParagraph === "number" && posCmp(span.startParagraph, span.startOffset || 0, span.endParagraph, span.endOffset || 0) < 0);
+  }
+
+  function copySpan(span) {
+    return {
+      startParagraph: span.startParagraph,
+      startOffset: span.startOffset || 0,
+      endParagraph: span.endParagraph,
+      endOffset: span.endOffset || 0
+    };
+  }
+
+  function spansTouch(prev, next) {
+    if (posCmp(prev.endParagraph, prev.endOffset, next.startParagraph, next.startOffset) >= 0) return true;
+    const len = (paragraphTexts[prev.endParagraph] || "").length;
+    return next.startParagraph === prev.endParagraph + 1 && next.startOffset === 0 && prev.endOffset >= len;
+  }
+
+  function mergeSpans(spans) {
+    const list = spans.map(copySpan).filter(spanValid).sort(function (a, b) {
+      return posCmp(a.startParagraph, a.startOffset, b.startParagraph, b.startOffset);
+    });
+    const out = [];
+    list.forEach(function (span) {
+      const prev = out[out.length - 1];
+      if (!prev || !spansTouch(prev, span)) {
+        out.push(span);
+        return;
+      }
+      if (posCmp(prev.endParagraph, prev.endOffset, span.endParagraph, span.endOffset) < 0) {
+        prev.endParagraph = span.endParagraph;
+        prev.endOffset = span.endOffset;
+      }
+    });
+    return out;
+  }
+
+  function noteSpans(note) {
+    if (Array.isArray(note.spans) && note.spans.length) return mergeSpans(note.spans);
+    if (typeof note.startParagraph === "number" && typeof note.endParagraph === "number") {
+      const span = copySpan(note);
+      return spanValid(span) ? [span] : [];
+    }
+    return [];
+  }
+
+  function stepPos(paragraph, offset, delta) {
+    let p = paragraph;
+    if (p < 0) p = 0;
+    if (p >= paragraphTexts.length) p = Math.max(0, paragraphTexts.length - 1);
+    const text = paragraphTexts[p] || "";
+    const o = offset || 0;
+    if (delta > 0) {
+      if (o < text.length) return { paragraph: p, offset: o + 1 };
+      if (p + 1 < paragraphTexts.length) return { paragraph: p + 1, offset: Math.min(1, (paragraphTexts[p + 1] || "").length) };
+      return { paragraph: p, offset: text.length };
+    }
+    if (o > 0) return { paragraph: p, offset: o - 1 };
+    if (p > 0) {
+      const prev = paragraphTexts[p - 1] || "";
+      return { paragraph: p - 1, offset: Math.max(0, prev.length - 1) };
+    }
+    return { paragraph: p, offset: 0 };
+  }
+
+  function growSpans(spans) {
+    const list = mergeSpans(spans);
+    if (!list.length) return list;
+    const first = list[0];
+    const last = list[list.length - 1];
+    const start = stepPos(first.startParagraph, first.startOffset, -1);
+    const end = stepPos(last.endParagraph, last.endOffset, 1);
+    first.startParagraph = start.paragraph;
+    first.startOffset = start.offset;
+    last.endParagraph = end.paragraph;
+    last.endOffset = end.offset;
+    return mergeSpans(list);
+  }
+
+  function subtractOne(span, cut) {
+    if (posCmp(span.endParagraph, span.endOffset, cut.startParagraph, cut.startOffset) <= 0 || posCmp(cut.endParagraph, cut.endOffset, span.startParagraph, span.startOffset) <= 0) return [span];
+    const out = [];
+    if (posCmp(span.startParagraph, span.startOffset, cut.startParagraph, cut.startOffset) < 0) {
+      out.push({
+        startParagraph: span.startParagraph,
+        startOffset: span.startOffset,
+        endParagraph: cut.startParagraph,
+        endOffset: cut.startOffset
+      });
+    }
+    if (posCmp(cut.endParagraph, cut.endOffset, span.endParagraph, span.endOffset) < 0) {
+      out.push({
+        startParagraph: cut.endParagraph,
+        startOffset: cut.endOffset,
+        endParagraph: span.endParagraph,
+        endOffset: span.endOffset
+      });
+    }
+    return out.filter(spanValid);
+  }
+
+  function subtractSpans(spans, cut) {
+    const out = [];
+    spans.forEach(function (span) {
+      subtractOne(span, cut).forEach(function (part) { out.push(part); });
+    });
+    return mergeSpans(out);
+  }
+
+  function spanQuote(spans) {
+    let quote = "";
+    spans.forEach(function (span) {
+      let piece = "";
+      for (let i = span.startParagraph; i <= span.endParagraph && i < paragraphTexts.length; i++) {
+        const text = paragraphTexts[i] || "";
+        const from = i === span.startParagraph ? span.startOffset : 0;
+        const to = i === span.endParagraph ? span.endOffset : text.length;
+        piece += text.slice(Math.max(0, from), Math.max(from, to));
+      }
+      if (!piece) return;
+      const prev = quote.slice(-1);
+      const next = piece.charAt(0);
+      const cjk = /[\u3400-\u9fff]/.test(prev) && /[\u3400-\u9fff]/.test(next);
+      if (quote && prev && next && !cjk && !/\s/.test(prev) && !/\s/.test(next)) quote += " ";
+      quote += piece;
+    });
+    return quote.replace(/[ \t]{2,}/g, " ").trim().slice(0, 240);
+  }
+
+  function writeSpans(note, spans) {
+    const merged = mergeSpans(spans);
+    if (merged.length) note.spans = merged;
+    else delete note.spans;
+    if (!merged.length) {
+      note.startParagraph = null;
+      note.startOffset = 0;
+      note.endParagraph = null;
+      note.endOffset = 0;
+      note.quote = "";
+      return;
+    }
+    note.startParagraph = merged[0].startParagraph;
+    note.startOffset = merged[0].startOffset;
+    note.endParagraph = merged[merged.length - 1].endParagraph;
+    note.endOffset = merged[merged.length - 1].endOffset;
+    note.paragraph = note.startParagraph;
+    note.quote = spanQuote(merged);
+  }
+
+  function clearSelection() {
+    const sel = window.getSelection();
+    if (sel) sel.removeAllRanges();
+  }
+
+  function showNoteHint(note, kind) {
+    noteHintId = note.id;
+    noteHintKind = kind || "";
+    renderNotes();
+  }
+
   function highlightNote(note) {
     const range = currentSelectionRange();
     if (!range) {
-      noteHintId = note.id;
-      renderNotes();
+      showNoteHint(note, "");
       return;
     }
     noteHintId = "";
-    note.startParagraph = range.startParagraph;
-    note.startOffset = range.startOffset;
-    note.endParagraph = range.endParagraph;
-    note.endOffset = range.endOffset;
-    note.quote = range.quote;
     if (!note.color) note.color = "sand";
+    writeSpans(note, [range]);
     persist();
+    clearSelection();
     relayoutNotes();
     renderNotes();
+  }
+
+  function spansKey(spans) {
+    return JSON.stringify(mergeSpans(spans).map(function (span) {
+      return [span.startParagraph, span.startOffset, span.endParagraph, span.endOffset];
+    }));
+  }
+
+  function growNote(note) {
+    const range = currentSelectionRange();
+    const spans = noteSpans(note);
+    if (!range && !spans.length) {
+      showNoteHint(note, "");
+      return;
+    }
+    let next = spans;
+    if (range) next = mergeSpans(spans.concat([range]));
+    if (!range || spansKey(next) === spansKey(spans)) next = growSpans(next.length ? next : spans);
+    if (!next.length || spansKey(next) === spansKey(spans)) {
+      showNoteHint(note, "");
+      return;
+    }
+    noteHintId = "";
+    if (!note.color) note.color = "sand";
+    writeSpans(note, next);
+    persist();
+    clearSelection();
+    relayoutNotes();
+    renderNotes();
+  }
+
+  function shrinkNote(note) {
+    const range = currentSelectionRange();
+    const spans = noteSpans(note);
+    if (!range || !spans.length) {
+      showNoteHint(note, "trim");
+      return;
+    }
+    const next = subtractSpans(spans, range);
+    if (spansKey(next) === spansKey(spans)) {
+      showNoteHint(note, "trim");
+      return;
+    }
+    noteHintId = "";
+    writeSpans(note, next);
+    persist();
+    clearSelection();
+    relayoutNotes();
+    renderNotes();
+  }
+
+  function setReaction(note, value) {
+    note.reaction = note.reaction === value ? "" : value;
+    persist();
+    const card = document.querySelector('#notes-list [data-id="' + note.id + '"]');
+    if (!card) {
+      renderNotes();
+      return;
+    }
+    card.querySelectorAll("[data-reaction]").forEach(function (button) {
+      button.classList.toggle("is-on", button.dataset.reaction === note.reaction);
+    });
   }
 
   function selectionNoteOn() {
@@ -4663,7 +4989,7 @@
     area.focus();
   }
 
-  function addNoteFromSelection() {
+  function addNoteFromSelection(reaction, write) {
     const range = currentSelectionRange();
     if (!range || !state.fileName || state.mode !== "reading") return;
     const entry = fileEntry(state.fileName);
@@ -4676,21 +5002,133 @@
       at: Date.now(),
       folderId: "",
       body: "",
+      reaction: reaction === "up" || reaction === "down" ? reaction : "",
       color: "sand",
       quote: range.quote,
+      chapterTitle: "",
+      chapterParagraph: null,
       startParagraph: range.startParagraph,
       startOffset: range.startOffset,
       endParagraph: range.endParagraph,
-      endOffset: range.endOffset
+      endOffset: range.endOffset,
+      spans: [{
+        startParagraph: range.startParagraph,
+        startOffset: range.startOffset,
+        endParagraph: range.endParagraph,
+        endOffset: range.endOffset
+      }]
     };
     entry.notes.unshift(note);
     persist();
     hideSelectionNote();
-    const sel = window.getSelection();
-    if (sel) sel.removeAllRanges();
+    clearSelection();
     relayoutNotes();
+    if (!write) return;
     openNotes(note.id);
     focusNoteBody(note.id);
+  }
+
+  function chapterEndOn() {
+    const pop = document.getElementById("chapter-end");
+    return !!(pop && !pop.hidden);
+  }
+
+  function dismissChapterEnd() {
+    const pop = document.getElementById("chapter-end");
+    if (pop) pop.hidden = true;
+  }
+
+  function hideChapterEnd() {
+    dismissChapterEnd();
+    chapterEndHold = -1;
+  }
+
+  function chapterEndIndex() {
+    if (state.mode !== "reading" || state.kind !== "epub" || state.anim || opening) return -1;
+    if (!state.chapters.length || !metrics.length) return -1;
+    const ci = chapterAt(state.active);
+    if (ci < 0) return -1;
+    const next = state.chapters[ci + 1];
+    const last = next ? Math.max(state.chapters[ci].paragraph || 0, next.paragraph - 1) : metrics.length - 1;
+    const tail = metrics[last];
+    if (!tail) return -1;
+    const center = scroller.scrollTop + (scroller.clientHeight || window.innerHeight) / 2;
+    const mark = tail.top + Math.min(tail.height * 0.62, Math.max(0, tail.height - 24));
+    const nextMetric = next && metrics[next.paragraph];
+    const nextTop = nextMetric ? nextMetric.top + 8 : Infinity;
+    if (center >= mark && center < nextTop) return ci;
+    return -1;
+  }
+
+  function syncChapterEnd() {
+    const pop = document.getElementById("chapter-end");
+    if (!pop) return;
+    const index = chapterEndIndex();
+    if (index < 0) {
+      chapterEndHold = -1;
+      if (!pop.hidden) pop.hidden = true;
+      return;
+    }
+    if (chapterEndHold === index) return;
+    chapterEndHold = index;
+    const nextBtn = document.getElementById("chapter-end-next");
+    if (nextBtn) nextBtn.hidden = !state.chapters[index + 1];
+    pop.dataset.chapter = String(index);
+    pop.hidden = false;
+    document.body.classList.remove("cursor-hidden");
+    if (state.playing) {
+      state.playing = false;
+      updatePlayButton();
+    }
+  }
+
+  function addChapterNote() {
+    const pop = document.getElementById("chapter-end");
+    const index = pop && pop.dataset.chapter !== undefined ? Number(pop.dataset.chapter) : -1;
+    const chapter = state.chapters[index];
+    if (!chapter || !state.fileName || state.mode !== "reading") return;
+    const title = String(chapter.title || "").trim();
+    const at = chapter.paragraph || 0;
+    const entry = fileEntry(state.fileName);
+    let note = entry.notes.filter(function (item) {
+      return item.chapterTitle === title && item.chapterParagraph === at;
+    })[0];
+    if (!note) {
+      note = {
+        id: uid(),
+        name: (title || t("chapterNote")).slice(0, 18),
+        scroll: Math.round(scroller.scrollTop),
+        paragraph: at,
+        at: Date.now(),
+        folderId: "",
+        body: "",
+        reaction: "",
+        color: "sand",
+        quote: "",
+        chapterTitle: title,
+        chapterParagraph: at,
+        startParagraph: null,
+        startOffset: 0,
+        endParagraph: null,
+        endOffset: 0
+      };
+      entry.notes.unshift(note);
+      persist();
+    }
+    dismissChapterEnd();
+    openNotes(note.id);
+    focusNoteBody(note.id);
+  }
+
+  function goNextChapter() {
+    const pop = document.getElementById("chapter-end");
+    const index = pop && pop.dataset.chapter !== undefined ? Number(pop.dataset.chapter) : -1;
+    const next = state.chapters[index + 1];
+    dismissChapterEnd();
+    if (!next) return;
+    state.playing = true;
+    updatePlayButton();
+    animateToParagraph(next.paragraph || 0);
   }
 
   function setNoteColor(note, color) {
@@ -4999,11 +5437,26 @@
     });
     const quote = document.createElement("p");
     quote.className = "note-quote";
-    quote.textContent = note.quote || (noteHintId === note.id ? t("notesNeedSelection") : "");
-    if (!note.quote && noteHintId !== note.id) quote.hidden = true;
+    if (noteHintId === note.id) {
+      quote.textContent = noteHintKind === "trim" ? t("notesTrim") : t("notesNeedSelection");
+    } else {
+      quote.textContent = note.quote || "";
+      quote.hidden = !note.quote;
+    }
+    const react = document.createElement("div");
+    react.className = "note-react";
+    ["up", "down"].forEach(function (value) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.reaction = value;
+      button.textContent = t(value === "up" ? "noteUp" : "noteDown");
+      if (note.reaction === value) button.classList.add("is-on");
+      button.addEventListener("click", function () { setReaction(note, value); });
+      react.appendChild(button);
+    });
     const body = document.createElement("textarea");
     body.value = note.body || "";
-    body.placeholder = t("notesBody");
+    body.placeholder = note.chapterTitle ? t("notesChapterBody") : t("notesBody");
     body.addEventListener("keydown", function (e) { e.stopPropagation(); });
     body.addEventListener("input", function () {
       note.body = body.value;
@@ -5017,6 +5470,23 @@
     hl.textContent = t("notesHighlight");
     hl.addEventListener("mousedown", function (e) { e.preventDefault(); });
     hl.addEventListener("click", function () { highlightNote(note); });
+    const grow = document.createElement("button");
+    grow.type = "button";
+    grow.className = "note-step";
+    grow.textContent = "+";
+    grow.setAttribute("aria-label", t("noteGrow"));
+    grow.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    grow.addEventListener("click", function () { growNote(note); });
+    const shrink = document.createElement("button");
+    shrink.type = "button";
+    shrink.className = "note-step";
+    shrink.textContent = "−";
+    shrink.setAttribute("aria-label", t("noteShrink"));
+    shrink.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    shrink.addEventListener("click", function () { shrinkNote(note); });
+    const steps = document.createElement("span");
+    steps.className = "note-steps";
+    steps.append(grow, shrink);
     const colors = document.createElement("span");
     colors.className = "note-colors";
     NOTE_COLORS.forEach(function (color) {
@@ -5037,8 +5507,15 @@
     remove.className = "note-remove";
     remove.textContent = t("bookmarkRemove");
     remove.addEventListener("click", function () { removeNote(note.id); });
-    actions.append(hl, colors, rename, remove);
-    card.append(title, quote, body, actions);
+    actions.append(hl, steps, colors, rename, remove);
+    if (note.chapterTitle) {
+      const chapterLine = document.createElement("p");
+      chapterLine.className = "note-chapter";
+      chapterLine.textContent = note.chapterTitle;
+      card.append(title, chapterLine, quote, react, body, actions);
+    } else {
+      card.append(title, quote, react, body, actions);
+    }
     return card;
   }
 
@@ -5127,7 +5604,7 @@
     list.replaceChildren();
     const visible = notesInView(entry).filter(function (note) {
       if (!q) return true;
-      const blob = (note.name || "") + " " + (note.body || "") + " " + (note.quote || "");
+      const blob = (note.name || "") + " " + (note.body || "") + " " + (note.quote || "") + " " + (note.chapterTitle || "");
       return blob.toLowerCase().indexOf(q) >= 0;
     });
     if (!visible.length) {
@@ -5237,8 +5714,13 @@
     if (selectionNoteOn() && e.code === "Escape") {
       e.preventDefault();
       hideSelectionNote();
-      const sel = window.getSelection();
-      if (sel) sel.removeAllRanges();
+      clearSelection();
+      releaseFocus();
+      return;
+    }
+    if (chapterEndOn() && e.code === "Escape") {
+      e.preventDefault();
+      dismissChapterEnd();
       releaseFocus();
       return;
     }
@@ -5341,8 +5823,16 @@
       else openChapterPanel();
     });
     const selectionNoteAdd = document.getElementById("selection-note-add");
-    selectionNoteAdd.addEventListener("mousedown", function (e) { e.preventDefault(); });
-    selectionNoteAdd.addEventListener("click", addNoteFromSelection);
+    const selectionNoteUp = document.getElementById("selection-note-up");
+    const selectionNoteDown = document.getElementById("selection-note-down");
+    [selectionNoteAdd, selectionNoteUp, selectionNoteDown].forEach(function (button) {
+      button.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    });
+    selectionNoteUp.addEventListener("click", function () { addNoteFromSelection("up", false); });
+    selectionNoteDown.addEventListener("click", function () { addNoteFromSelection("down", false); });
+    selectionNoteAdd.addEventListener("click", function () { addNoteFromSelection("", true); });
+    document.getElementById("chapter-end-note").addEventListener("click", addChapterNote);
+    document.getElementById("chapter-end-next").addEventListener("click", goNextChapter);
     document.addEventListener("selectionchange", function () {
       const sel = window.getSelection();
       if (!sel || sel.isCollapsed) hideSelectionNote();
