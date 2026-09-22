@@ -452,8 +452,74 @@
     letter-spacing: 0.04em;
     font-variant-numeric: tabular-nums;
     opacity: 0.3;
-    pointer-events: none;
     user-select: none;
+  }
+  #progress:hover,
+  #progress:focus-visible { opacity: 0.75; }
+
+  #stats {
+    position: fixed;
+    z-index: 7;
+    right: 18px;
+    bottom: 42px;
+    width: min(380px, calc(100% - 36px));
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: opacity 0.32s ease, transform 0.32s ease, visibility 0s linear 0.32s;
+  }
+  #stats.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    pointer-events: auto;
+    transition: opacity 0.32s ease, transform 0.32s ease, visibility 0s;
+  }
+  #stats-panel {
+    position: relative;
+    padding: 28px 26px 24px;
+    background: color-mix(in srgb, var(--bg) 96%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 16px 40px color-mix(in srgb, var(--fg) 6%, transparent);
+    font-size: 16px;
+    line-height: 1.85;
+  }
+  #stats-close {
+    position: absolute;
+    top: 16px;
+    right: 18px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    opacity: 0.4;
+  }
+  #stats-close:hover,
+  #stats-close:focus-visible { opacity: 0.8; }
+  .stat-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-line span:first-child { opacity: 0.48; }
+  #stat-quote {
+    margin: 1.35em 0 0.25em;
+    font-size: 17px;
+    line-height: 1.85;
+  }
+  #stat-by {
+    margin: 0;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    opacity: 0.4;
+  }
+  #stats-cheer {
+    margin: 1.35em 0 0;
+    font-size: 18px;
+    letter-spacing: 0.32em;
   }
 
   #chrome {
@@ -594,11 +660,12 @@
     #landing-lang { right: 14px; top: 12px; }
     #guide-link { left: 14px; bottom: 14px; }
     #progress { right: 14px; bottom: 12px; }
+    #stats { right: 14px; bottom: 40px; width: min(380px, calc(100% - 28px)); }
     input[type="range"] { width: 72px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    #chrome, #guide, #history, #bookmarks { transition: none; }
+    #chrome, #guide, #history, #bookmarks, #stats { transition: none; }
   }
 </style>
 </head>
@@ -640,7 +707,7 @@
         <li><span>Esc</span><span data-i18n="keyEsc">关闭说明，或隐藏控制栏</span></li>
       </ul>
       <p data-i18n="guideMouse">双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。</p>
-      <p data-i18n="guideChrome">鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字，是现在读到哪里。</p>
+      <p data-i18n="guideChrome">鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。</p>
       <h2 data-i18n="filesH">文件</h2>
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
@@ -658,7 +725,20 @@
   </div>
 
   <div id="focus-line" hidden></div>
-  <div id="progress" hidden>0%</div>
+  <button type="button" id="progress" hidden>0%</button>
+  <div id="stats">
+    <div id="stats-panel" role="dialog" aria-labelledby="stats-cheer">
+      <button type="button" id="stats-close" data-i18n="guideClose">关闭</button>
+      <p class="stat-line"><span data-i18n="statRead">已读</span><span id="stat-read"></span></p>
+      <p class="stat-line"><span data-i18n="statUnread">未读</span><span id="stat-unread"></span></p>
+      <p class="stat-line"><span data-i18n="statSince">距上一书签</span><span id="stat-since"></span></p>
+      <p class="stat-line"><span data-i18n="statReadPct">已经读了</span><span id="stat-read-pct"></span></p>
+      <p class="stat-line"><span data-i18n="statUnreadPct">还没读</span><span id="stat-unread-pct"></span></p>
+      <p id="stat-quote"></p>
+      <p id="stat-by"></p>
+      <p id="stats-cheer">加油</p>
+    </div>
+  </div>
   <button type="button" id="guide-link" data-i18n-aria="guide" aria-label="说明">
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.25"></circle>
@@ -808,6 +888,22 @@
   let pdfjsPromise = null;
   let openJob = 0;
   let historyItems = [];
+  let charLens = [];
+
+  const QUOTES = {
+    zh: [
+      ["读书破万卷，下笔如有神。", "杜甫"],
+      ["旧书不厌百回读，熟读深思子自知。", "苏轼"],
+      ["非学无以广才，非志无以成学。", "诸葛亮"],
+      ["黑发不知勤学早，白首方悔读书迟。", "颜真卿"],
+      ["读书之法，在循序而渐进，熟读而精思。", "朱熹"]
+    ],
+    en: [
+      ["Some books are to be tasted, others to be swallowed, and some few to be chewed and digested.", "Francis Bacon"],
+      ["The reading of all good books is like conversation with the finest minds of past centuries.", "René Descartes"],
+      ["I declare after all there is no enjoyment like reading.", "Jane Austen"]
+    ]
+  };
 
   function clamp(n, min, max) {
     return Math.min(max, Math.max(min, n));
@@ -896,7 +992,7 @@
       keyF: "全屏",
       keyEsc: "关闭说明，或隐藏控制栏",
       guideMouse: "双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。",
-      guideChrome: "鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字，是现在读到哪里。",
+      guideChrome: "鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。",
       filesH: "文件",
       guideFiles: "文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。",
       guidePdf: "整理 PDF 时会从网络加载解析组件。TXT 不需要网络。",
@@ -909,6 +1005,13 @@
       bookmarkEmpty: "这一本还没有书签",
       bookmarkRename: "改名",
       bookmarkRemove: "删除",
+      statRead: "已读",
+      statUnread: "未读",
+      statSince: "距上一书签",
+      statReadPct: "已经读了",
+      statUnreadPct: "还没读",
+      statChars: "{n} 字",
+      statNoMark: "还没有",
       slow: "慢",
       fast: "快",
       wide: "宽",
@@ -960,7 +1063,7 @@
       keyF: "Full screen",
       keyEsc: "Close the guide, or hide the controls",
       guideMouse: "Double-click the text to pause or continue. The wheel lets auto-scroll step aside for a moment.",
-      guideChrome: "Move the pointer to the top to change speed, size, typeface, and width, to go full screen, or to bookmark this text. A new bookmark is named with the date and time, and the name can be changed. In Chrome, an install icon appears at the right of the address bar. The faint number at the lower right is how far you have read.",
+      guideChrome: "Move the pointer to the top to change speed, size, typeface, and width, to go full screen, or to bookmark this text. A new bookmark is named with the date and time, and the name can be changed. In Chrome, an install icon appears at the right of the address bar. The faint number at the lower right is how far you have read. Click it to see how many words.",
       filesH: "Files",
       guideFiles: "The text stays in this browser and is not uploaded. Recently opened files can be opened again. Speed, size, typeface, width, and reading position are remembered.",
       guidePdf: "Reading a PDF loads a parser from the network. TXT does not.",
@@ -973,6 +1076,13 @@
       bookmarkEmpty: "No bookmarks in this text yet",
       bookmarkRename: "Rename",
       bookmarkRemove: "Remove",
+      statRead: "Read",
+      statUnread: "Still to read",
+      statSince: "Since the last bookmark",
+      statReadPct: "Read",
+      statUnreadPct: "Still to read",
+      statChars: "{n} characters",
+      statNoMark: "None yet",
       slow: "Slow",
       fast: "Fast",
       wide: "Wide",
@@ -1031,6 +1141,7 @@
     updateFullscreenButton();
     renderHistory();
     renderBookmarks();
+    fillStats();
   }
 
   function toggleLang() {
@@ -1627,6 +1738,7 @@
   /* ---------- 阅读界面 ---------- */
 
   function renderParagraphs(paragraphs) {
+    charLens = paragraphs.map(function (text) { return text.replace(/\s/g, "").length; });
     const frag = document.createDocumentFragment();
     paragraphs.forEach(function (text, index) {
       const p = document.createElement("p");
@@ -1711,11 +1823,88 @@
     }
   }
 
+  function charsUpTo(scrollY) {
+    if (!metrics.length || !charLens.length) return 0;
+    const center = scrollY + scroller.clientHeight / 2;
+    let read = 0;
+    for (let i = 0; i < metrics.length; i++) {
+      const n = charLens[i] || 0;
+      const top = metrics[i].top;
+      const height = Math.max(1, metrics[i].height);
+      if (center >= top + height) read += n;
+      else if (center > top) read += n * ((center - top) / height);
+    }
+    return read;
+  }
+
+  function readingCounts() {
+    let total = 0;
+    for (let i = 0; i < charLens.length; i++) total += charLens[i] || 0;
+    const read = Math.min(total, Math.max(0, charsUpTo(scroller.scrollTop)));
+    return { read: read, total: total };
+  }
+
+  function previousMark() {
+    const entry = state.fileName && state.store.files && state.store.files[state.fileName];
+    const marks = entry && Array.isArray(entry.marks) ? entry.marks : [];
+    const y = scroller.scrollTop;
+    let best = null;
+    marks.forEach(function (mark) {
+      if (typeof mark.scroll !== "number" || mark.scroll > y + 2) return;
+      if (!best || mark.scroll > best.scroll) best = mark;
+    });
+    return best;
+  }
+
+  function formatCount(n) {
+    const rounded = Math.max(0, Math.round(n));
+    return rounded.toLocaleString(state.lang === "en" ? "en-US" : "zh-CN");
+  }
+
+  function todayQuote() {
+    const list = QUOTES[state.lang] || QUOTES.zh;
+    const start = new Date(new Date().getFullYear(), 0, 0);
+    const day = Math.floor((Date.now() - start.getTime()) / 86400000);
+    return list[Math.abs(day) % list.length];
+  }
+
+  function fillStats() {
+    const readEl = document.getElementById("stat-read");
+    if (!readEl) return;
+    const counted = readingCounts();
+    const unread = Math.max(0, counted.total - counted.read);
+    const pct = counted.total <= 0 ? 0 : Math.round((counted.read / counted.total) * 100);
+    const mark = previousMark();
+    const since = mark ? Math.max(0, counted.read - charsUpTo(mark.scroll)) : null;
+    const quote = todayQuote();
+    readEl.textContent = t("statChars").replace("{n}", formatCount(counted.read));
+    document.getElementById("stat-unread").textContent = t("statChars").replace("{n}", formatCount(unread));
+    document.getElementById("stat-since").textContent = since === null ? t("statNoMark") : t("statChars").replace("{n}", formatCount(since));
+    document.getElementById("stat-read-pct").textContent = pct + "%";
+    document.getElementById("stat-unread-pct").textContent = (100 - pct) + "%";
+    document.getElementById("stat-quote").textContent = quote[0];
+    document.getElementById("stat-by").textContent = quote[1];
+  }
+
+  function statsOpen() {
+    return document.getElementById("stats").classList.contains("is-open");
+  }
+
+  function openStats() {
+    fillStats();
+    document.getElementById("stats").classList.add("is-open");
+  }
+
+  function closeStats() {
+    document.getElementById("stats").classList.remove("is-open");
+  }
+
   function updateProgress() {
     const max = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
     const value = max <= 1 ? 0 : Math.round((scroller.scrollTop / max) * 100);
     const text = clamp(value, 0, 100) + "%";
     if (progressEl.textContent !== text) progressEl.textContent = text;
+    if (statsOpen()) fillStats();
   }
 
   function updatePlayButton() {
@@ -2244,6 +2433,13 @@
 
   function onKey(e) {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (statsOpen()) {
+      if (e.code === "Escape") {
+        e.preventDefault();
+        closeStats();
+      }
+      return;
+    }
     if (document.activeElement && document.activeElement.closest && document.activeElement.closest("#bookmark-list input")) return;
     if (bookmarksOpen()) {
       if (e.code === "Escape") {
@@ -2322,6 +2518,17 @@
   }
 
   function bind() {
+    document.getElementById("stats-close").addEventListener("click", closeStats);
+    progressEl.addEventListener("click", function () {
+      if (statsOpen()) closeStats();
+      else openStats();
+    });
+    document.addEventListener("pointerdown", function (e) {
+      const panel = document.getElementById("stats");
+      if (!panel.classList.contains("is-open")) return;
+      if (panel.contains(e.target) || progressEl.contains(e.target)) return;
+      closeStats();
+    });
     document.getElementById("guide-link").addEventListener("click", function () {
       if (guideOpen()) closeGuide();
       else openGuide();
