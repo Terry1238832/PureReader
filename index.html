@@ -168,12 +168,13 @@
   #btn-full.is-full .icon-enter { display: none; }
   #btn-full.is-full .icon-exit { display: block; }
 
-  #history {
+  #history,
+  #bookmarks {
     position: fixed;
     z-index: 8;
     top: 54px;
     right: 28px;
-    width: min(280px, calc(100% - 40px));
+    width: min(320px, calc(100% - 40px));
     opacity: 0;
     visibility: hidden;
     transform: translateY(-6px);
@@ -181,15 +182,17 @@
     transition: opacity 0.28s ease, transform 0.28s ease, visibility 0s linear 0.28s;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
   }
-  #history.is-open {
+  #history.is-open,
+  #bookmarks.is-open {
     opacity: 1;
     visibility: visible;
     transform: none;
     pointer-events: auto;
     transition: opacity 0.28s ease, transform 0.28s ease, visibility 0s;
   }
-  #history-panel {
-    max-height: min(46vh, 320px);
+  #history-panel,
+  #bookmark-panel {
+    max-height: min(46vh, 360px);
     overflow: auto;
     padding: 6px 0;
     background: color-mix(in srgb, var(--bg) 96%, transparent);
@@ -198,9 +201,12 @@
     box-shadow: 0 16px 40px color-mix(in srgb, var(--fg) 6%, transparent);
     scrollbar-width: none;
   }
-  #history-panel::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  #history-panel::-webkit-scrollbar,
+  #bookmark-panel::-webkit-scrollbar { display: none; width: 0; height: 0; }
   #history-panel button,
-  #history-panel p {
+  #history-panel p,
+  #bookmark-add,
+  #bookmark-list .bookmark-empty {
     display: block;
     width: 100%;
     margin: 0;
@@ -214,8 +220,53 @@
     text-overflow: ellipsis;
   }
   #history-panel button:hover,
-  #history-panel button:focus-visible { opacity: 1; }
-  #history-panel p { opacity: 0.42; }
+  #history-panel button:focus-visible,
+  #bookmark-add:hover,
+  #bookmark-add:focus-visible { opacity: 1; }
+  #history-panel p,
+  #bookmark-list .bookmark-empty { opacity: 0.42; }
+
+  .bookmark-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px 0 6px;
+  }
+  .bookmark-go {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.45;
+    opacity: 0.72;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .bookmark-go:hover,
+  .bookmark-go:focus-visible { opacity: 1; }
+  .bookmark-edit,
+  .bookmark-remove {
+    flex: none;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    opacity: 0.38;
+  }
+  .bookmark-edit:hover,
+  .bookmark-edit:focus-visible,
+  .bookmark-remove:hover,
+  .bookmark-remove:focus-visible { opacity: 0.85; }
+  .bookmark-row input {
+    flex: 1;
+    min-width: 0;
+    margin: 6px 0 6px 10px;
+    padding: 4px 0;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--fg) 28%, transparent);
+    font-size: 13px;
+  }
 
   #guide-author {
     margin: 1.8em 0 0.2em;
@@ -539,7 +590,7 @@
     #guide-panel { padding: 28px 22px 22px; }
     #guide-panel li { grid-template-columns: 5.4em 1fr; }
     #guide { left: 14px; bottom: 42px; width: min(420px, calc(100% - 28px)); }
-    #history { right: 14px; top: 72px; }
+    #history, #bookmarks { right: 14px; top: 72px; }
     #landing-lang { right: 14px; top: 12px; }
     #guide-link { left: 14px; bottom: 14px; }
     #progress { right: 14px; bottom: 12px; }
@@ -547,7 +598,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    #chrome, #guide, #history { transition: none; }
+    #chrome, #guide, #history, #bookmarks { transition: none; }
   }
 </style>
 </head>
@@ -589,7 +640,7 @@
         <li><span>Esc</span><span data-i18n="keyEsc">关闭说明，或隐藏控制栏</span></li>
       </ul>
       <p data-i18n="guideMouse">双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。</p>
-      <p data-i18n="guideChrome">鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字，是现在读到哪里。</p>
+      <p data-i18n="guideChrome">鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字，是现在读到哪里。</p>
       <h2 data-i18n="filesH">文件</h2>
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
@@ -621,6 +672,7 @@
     <div class="chrome-actions">
       <button type="button" id="btn-open" data-i18n="open">打开</button>
       <button type="button" id="btn-history" data-i18n="history">历史</button>
+      <button type="button" id="btn-bookmarks" data-i18n="bookmarks">书签</button>
       <button type="button" id="btn-play" class="is-paused" data-i18n-aria="pause" aria-label="暂停">
         <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M8 5.5v13M16 5.5v13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
@@ -664,6 +716,13 @@
 
   <div id="history">
     <div id="history-panel"></div>
+  </div>
+
+  <div id="bookmarks">
+    <div id="bookmark-panel">
+      <button type="button" id="bookmark-add" data-i18n="bookmarkAdd">添加</button>
+      <div id="bookmark-list"></div>
+    </div>
   </div>
 
   <input id="file" type="file" accept=".pdf,.txt,text/plain,application/pdf" hidden>
@@ -779,10 +838,22 @@
     try { localStorage.setItem(STORE_KEY, JSON.stringify(state.store)); } catch (err) {}
   }
 
+  function fileEntry(name) {
+    const files = state.store.files || (state.store.files = {});
+    if (!files[name] || typeof files[name] !== "object") files[name] = { scroll: 0, at: 0, marks: [] };
+    if (!Array.isArray(files[name].marks)) files[name].marks = [];
+    return files[name];
+  }
+
   function rememberScroll() {
     if (!state.fileName || state.mode !== "reading") return;
     const files = state.store.files || {};
-    files[state.fileName] = { scroll: Math.round(scroller.scrollTop), at: Date.now() };
+    const prev = files[state.fileName] || {};
+    files[state.fileName] = {
+      scroll: Math.round(scroller.scrollTop),
+      at: Date.now(),
+      marks: Array.isArray(prev.marks) ? prev.marks : []
+    };
     const keys = Object.keys(files);
     if (keys.length > 40) {
       keys.sort(function (a, b) { return (files[a].at || 0) - (files[b].at || 0); });
@@ -825,7 +896,7 @@
       keyF: "全屏",
       keyEsc: "关闭说明，或隐藏控制栏",
       guideMouse: "双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。",
-      guideChrome: "鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字，是现在读到哪里。",
+      guideChrome: "鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字，是现在读到哪里。",
       filesH: "文件",
       guideFiles: "文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。",
       guidePdf: "整理 PDF 时会从网络加载解析组件。TXT 不需要网络。",
@@ -833,6 +904,11 @@
       open: "打开",
       history: "历史",
       historyEmpty: "还没有打开过",
+      bookmarks: "书签",
+      bookmarkAdd: "添加",
+      bookmarkEmpty: "这一本还没有书签",
+      bookmarkRename: "改名",
+      bookmarkRemove: "删除",
       slow: "慢",
       fast: "快",
       wide: "宽",
@@ -884,7 +960,7 @@
       keyF: "Full screen",
       keyEsc: "Close the guide, or hide the controls",
       guideMouse: "Double-click the text to pause or continue. The wheel lets auto-scroll step aside for a moment.",
-      guideChrome: "Move the pointer to the top to change speed, size, typeface, and width, or to go full screen. In Chrome, an install icon appears at the right of the address bar. The faint number at the lower right is how far you have read.",
+      guideChrome: "Move the pointer to the top to change speed, size, typeface, and width, to go full screen, or to bookmark this text. A new bookmark is named with the date and time, and the name can be changed. In Chrome, an install icon appears at the right of the address bar. The faint number at the lower right is how far you have read.",
       filesH: "Files",
       guideFiles: "The text stays in this browser and is not uploaded. Recently opened files can be opened again. Speed, size, typeface, width, and reading position are remembered.",
       guidePdf: "Reading a PDF loads a parser from the network. TXT does not.",
@@ -892,6 +968,11 @@
       open: "Open",
       history: "History",
       historyEmpty: "Nothing opened yet",
+      bookmarks: "Bookmarks",
+      bookmarkAdd: "Add",
+      bookmarkEmpty: "No bookmarks in this text yet",
+      bookmarkRename: "Rename",
+      bookmarkRemove: "Remove",
       slow: "Slow",
       fast: "Fast",
       wide: "Wide",
@@ -949,6 +1030,7 @@
     updatePlayButton();
     updateFullscreenButton();
     renderHistory();
+    renderBookmarks();
   }
 
   function toggleLang() {
@@ -1695,9 +1777,14 @@
     state.active = i;
     const m = metrics[i];
     const target = clamp(m.top + m.height / 2 - scroller.clientHeight / 2, 0, maxScroll());
+    animateToScroll(target);
+  }
+
+  function animateToScroll(target) {
+    const y = clamp(target, 0, maxScroll());
     const start = scroller.scrollTop;
-    const duration = Math.min(780, Math.max(320, Math.abs(target - start) * 0.38));
-    state.anim = { start: start, target: target, t0: performance.now(), duration: duration };
+    const duration = Math.min(780, Math.max(320, Math.abs(y - start) * 0.38));
+    state.anim = { start: start, target: y, t0: performance.now(), duration: duration };
   }
 
   function afterLayoutChange() {
@@ -1896,6 +1983,7 @@
   function beginOpen(name, kind, bufferPromise) {
     const job = ++openJob;
     closeHistory();
+    closeBookmarks();
     state.fileName = name || t("untitled");
     state.mode = "processing";
     document.body.classList.remove("is-reading", "cursor-hidden");
@@ -1956,7 +2044,7 @@
   }
 
   function scheduleChromeHide() {
-    if (historyOpen()) return;
+    if (historyOpen() || bookmarksOpen()) return;
     clearTimeout(chromeTimer);
     chromeTimer = setTimeout(hideChromeNow, CHROME_HIDE);
   }
@@ -2007,6 +2095,7 @@
   }
 
   function openHistoryPanel() {
+    closeBookmarks();
     document.getElementById("history").classList.add("is-open");
     revealChrome();
   }
@@ -2015,8 +2104,154 @@
     document.getElementById("history").classList.remove("is-open");
   }
 
+  function pad2(n) {
+    return (n < 10 ? "0" : "") + n;
+  }
+
+  function defaultMarkName(date) {
+    const d = date || new Date();
+    const base = d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+    const marks = state.fileName ? fileEntry(state.fileName).marks : [];
+    if (!marks.some(function (mark) { return mark.name === base; })) return base;
+    return base + ":" + pad2(d.getSeconds());
+  }
+
+  function bookmarksOpen() {
+    return document.getElementById("bookmarks").classList.contains("is-open");
+  }
+
+  function openBookmarkPanel() {
+    closeHistory();
+    renderBookmarks();
+    document.getElementById("bookmarks").classList.add("is-open");
+    revealChrome();
+  }
+
+  function closeBookmarks() {
+    document.getElementById("bookmarks").classList.remove("is-open");
+  }
+
+  function addBookmark() {
+    if (!state.fileName || state.mode !== "reading") return;
+    const entry = fileEntry(state.fileName);
+    const now = new Date();
+    entry.marks.unshift({
+      id: now.getTime().toString(36) + Math.floor(Math.random() * 1296).toString(36),
+      name: defaultMarkName(now),
+      scroll: Math.round(scroller.scrollTop),
+      paragraph: state.active,
+      at: now.getTime()
+    });
+    if (entry.marks.length > 100) entry.marks.length = 100;
+    persist();
+    renderBookmarks();
+    openBookmarkPanel();
+  }
+
+  function goToMark(mark) {
+    if (typeof mark.paragraph === "number" && metrics.length) animateToParagraph(mark.paragraph);
+    else animateToScroll(mark.scroll || 0);
+    closeBookmarks();
+  }
+
+  function renameBookmark(id, name) {
+    if (!state.fileName) return;
+    const mark = fileEntry(state.fileName).marks.filter(function (item) { return item.id === id; })[0];
+    if (!mark) return;
+    mark.name = name.trim() || mark.name;
+    persist();
+    renderBookmarks();
+  }
+
+  function removeBookmark(id) {
+    if (!state.fileName) return;
+    const entry = fileEntry(state.fileName);
+    entry.marks = entry.marks.filter(function (item) { return item.id !== id; });
+    persist();
+    renderBookmarks();
+  }
+
+  function beginRename(row, mark) {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = mark.name;
+    input.setAttribute("aria-label", t("bookmarkRename"));
+    input.addEventListener("keydown", function (e) {
+      e.stopPropagation();
+      if (e.code === "Escape") {
+        e.preventDefault();
+        input.dataset.cancel = "1";
+        input.blur();
+      } else if (e.code === "Enter") {
+        e.preventDefault();
+        input.blur();
+      }
+    });
+    input.addEventListener("blur", function () {
+      if (input.dataset.cancel === "1") {
+        renderBookmarks();
+        return;
+      }
+      renameBookmark(mark.id, input.value);
+    });
+    row.replaceChildren(input);
+    input.focus();
+    input.select();
+  }
+
+  function renderBookmarks() {
+    const list = document.getElementById("bookmark-list");
+    if (!list) return;
+    list.replaceChildren();
+    const stored = state.fileName && state.store.files && state.store.files[state.fileName];
+    const marks = stored && Array.isArray(stored.marks) ? stored.marks : [];
+    if (!marks.length) {
+      const empty = document.createElement("p");
+      empty.className = "bookmark-empty";
+      empty.textContent = t("bookmarkEmpty");
+      list.appendChild(empty);
+      return;
+    }
+    marks.forEach(function (mark) {
+      const row = document.createElement("div");
+      row.className = "bookmark-row";
+      const go = document.createElement("button");
+      go.type = "button";
+      go.className = "bookmark-go";
+      go.textContent = mark.name;
+      go.title = mark.name;
+      go.addEventListener("click", function () { goToMark(mark); });
+      const edit = document.createElement("button");
+      edit.type = "button";
+      edit.className = "bookmark-edit";
+      edit.textContent = t("bookmarkRename");
+      edit.addEventListener("click", function (e) {
+        e.stopPropagation();
+        beginRename(row, mark);
+      });
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "bookmark-remove";
+      remove.textContent = t("bookmarkRemove");
+      remove.addEventListener("click", function (e) {
+        e.stopPropagation();
+        removeBookmark(mark.id);
+      });
+      row.append(go, edit, remove);
+      list.appendChild(row);
+    });
+  }
+
   function onKey(e) {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (document.activeElement && document.activeElement.closest && document.activeElement.closest("#bookmark-list input")) return;
+    if (bookmarksOpen()) {
+      if (e.code === "Escape") {
+        e.preventDefault();
+        closeBookmarks();
+      }
+      return;
+    }
     if (historyOpen()) {
       if (e.code === "Escape") {
         e.preventDefault();
@@ -2105,15 +2340,27 @@
       if (historyOpen()) closeHistory();
       else openHistoryPanel();
     });
-    document.querySelectorAll(".lang-switch").forEach(function (button) {
-      button.addEventListener("click", toggleLang);
+    document.getElementById("btn-bookmarks").addEventListener("click", function () {
+      if (bookmarksOpen()) closeBookmarks();
+      else openBookmarkPanel();
     });
+    document.getElementById("bookmark-add").addEventListener("click", addBookmark);
     document.addEventListener("pointerdown", function (e) {
       const panel = document.getElementById("history");
       const button = document.getElementById("btn-history");
       if (!panel.classList.contains("is-open")) return;
       if (panel.contains(e.target) || button.contains(e.target)) return;
       closeHistory();
+    });
+    document.querySelectorAll(".lang-switch").forEach(function (button) {
+      button.addEventListener("click", toggleLang);
+    });
+    document.addEventListener("pointerdown", function (e) {
+      const panel = document.getElementById("bookmarks");
+      const button = document.getElementById("btn-bookmarks");
+      if (!panel.classList.contains("is-open")) return;
+      if (panel.contains(e.target) || button.contains(e.target)) return;
+      closeBookmarks();
     });
     statusAction.addEventListener("click", openFilePicker);
     btnPlay.addEventListener("click", togglePlay);
@@ -2155,7 +2402,7 @@
         if (e.clientY > 96) state.chromeForcedOff = false;
         return;
       }
-      if (historyOpen() || e.clientY <= 80 || chrome.contains(e.target)) revealChrome();
+      if (historyOpen() || bookmarksOpen() || e.clientY <= 80 || chrome.contains(e.target)) revealChrome();
       else scheduleChromeHide();
     }, { passive: true });
 
