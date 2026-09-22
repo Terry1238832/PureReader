@@ -412,7 +412,7 @@
   .notes-dir-item svg { width: 14px; height: 14px; flex: none; }
   .notes-dir-name {
     flex: 1;
-    min-width: 0;
+    min-width: 2.5em;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -422,14 +422,19 @@
     font-size: 11px;
     opacity: 0.4;
   }
+  .notes-dir-item { padding-left: calc(14px + var(--indent, 0) * 14px); }
+  .notes-dir-rename,
   .notes-dir-remove {
     flex: none;
-    margin-right: 8px;
+    margin-right: 4px;
     font-size: 12px;
-    opacity: 0.35;
+    opacity: 0.4;
     white-space: nowrap;
   }
   .notes-dir-item:hover,
+  .notes-dir-item.is-folder { cursor: grab; }
+  .notes-dir-rename:hover,
+  .notes-dir-rename:focus-visible,
   .notes-dir-remove:hover,
   .notes-dir-remove:focus-visible { opacity: 0.9; }
   .notes-dir-row input {
@@ -548,6 +553,22 @@
     text-align: left;
     font-size: 14px;
     opacity: 0.82;
+    cursor: grab;
+  }
+  .note-drag-ghost {
+    position: fixed;
+    z-index: 12;
+    pointer-events: none;
+    max-width: 14em;
+    padding: 4px 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
+    font-size: 13px;
+    color: var(--fg);
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
+    box-shadow: 0 10px 28px color-mix(in srgb, var(--fg) 10%, transparent);
   }
   .note-name:hover,
   .note-name:focus-visible { opacity: 1; }
@@ -1153,7 +1174,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.5.4</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.6</span></button></p>
     </div>
   </div>
 
@@ -1307,8 +1328,21 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "1.5.4";
+  const VERSION = "1.6";
   const CHANGELOG = [
+    {
+      version: "1.6",
+      zh: [
+        "选中的文件夹可以改名。",
+        "拖动读书笔记的名字，可以放进左边的文件夹。",
+        "拖动文件夹，可以放进另一个文件夹。"
+      ],
+      en: [
+        "A selected folder can be renamed.",
+        "Drag a note's name into a folder on the left.",
+        "Drag a folder into another folder."
+      ]
+    },
     {
       version: "1.5.4",
       zh: [
@@ -3523,10 +3557,137 @@
   function moveNoteToFolder(noteId, folderId) {
     if (!state.fileName || !noteId) return;
     const note = fileEntry(state.fileName).notes.filter(function (item) { return item.id === noteId; })[0];
-    if (!note || note.folderId === folderId) return;
+    if (!note || (note.folderId || "") === (folderId || "")) return;
     note.folderId = folderId || "";
     persist();
     renderNotes();
+  }
+
+  function folderById(entry, id) {
+    return entry.folders.filter(function (item) { return item.id === id; })[0] || null;
+  }
+
+  function folderHolds(entry, ancestorId, id) {
+    let current = id;
+    const seen = {};
+    while (current) {
+      if (current === ancestorId) return true;
+      if (seen[current]) return false;
+      seen[current] = true;
+      const folder = folderById(entry, current);
+      if (!folder) return false;
+      current = folder.parentId || "";
+    }
+    return false;
+  }
+
+  function folderDepth(entry, id) {
+    let depth = 0;
+    let current = id;
+    const seen = {};
+    while (current) {
+      if (seen[current]) break;
+      seen[current] = true;
+      const folder = folderById(entry, current);
+      if (!folder || !folder.parentId) break;
+      depth += 1;
+      current = folder.parentId;
+    }
+    return depth;
+  }
+
+  function moveFolderInto(id, parentId) {
+    if (!state.fileName || !id) return;
+    const entry = fileEntry(state.fileName);
+    const folder = folderById(entry, id);
+    parentId = parentId || "";
+    if (!folder || parentId === id) return;
+    if (parentId && folderHolds(entry, id, parentId)) return;
+    if ((folder.parentId || "") === parentId) return;
+    if (parentId && folderDepth(entry, parentId) >= 5) return;
+    folder.parentId = parentId;
+    persist();
+    renderNotes();
+  }
+
+  let dragPress = null;
+  let dragMoved = false;
+
+  function dragGhost() {
+    let ghost = document.getElementById("note-drag-ghost");
+    if (!ghost) {
+      ghost = document.createElement("div");
+      ghost.id = "note-drag-ghost";
+      ghost.className = "note-drag-ghost";
+      ghost.hidden = true;
+      document.body.appendChild(ghost);
+    }
+    return ghost;
+  }
+
+  function clearDropMark() {
+    document.querySelectorAll(".notes-dir-row.is-drop").forEach(function (row) {
+      row.classList.remove("is-drop");
+    });
+  }
+
+  function dropTargetAt(x, y, press) {
+    const hit = document.elementFromPoint(x, y);
+    const row = hit && hit.closest ? hit.closest(".notes-dir-row") : null;
+    if (!row || !press) return null;
+    const target = row.dataset.dropId || "";
+    if (!target || target === "all") return null;
+    if (press.kind === "folder") {
+      if (target === press.id) return null;
+      if (target !== "loose" && folderHolds(fileEntry(state.fileName), press.id, target)) return null;
+    }
+    return row;
+  }
+
+  function endDrag(e) {
+    window.removeEventListener("pointermove", moveDrag);
+    window.removeEventListener("pointerup", endDrag);
+    window.removeEventListener("pointercancel", endDrag);
+    const press = dragPress;
+    dragPress = null;
+    const ghost = document.getElementById("note-drag-ghost");
+    if (ghost) ghost.hidden = true;
+    if (!press || !press.dragging) {
+      clearDropMark();
+      return;
+    }
+    dragMoved = true;
+    setTimeout(function () { dragMoved = false; }, 0);
+    const row = dropTargetAt(e.clientX, e.clientY, press);
+    clearDropMark();
+    if (!row) return;
+    const target = row.dataset.dropId === "loose" ? "" : row.dataset.dropId;
+    if (press.kind === "folder") moveFolderInto(press.id, target);
+    else moveNoteToFolder(press.id, target);
+  }
+
+  function moveDrag(e) {
+    if (!dragPress || e.pointerId !== dragPress.pointerId) return;
+    const dx = e.clientX - dragPress.x;
+    const dy = e.clientY - dragPress.y;
+    if (!dragPress.dragging && dx * dx + dy * dy < 25) return;
+    dragPress.dragging = true;
+    const ghost = dragGhost();
+    ghost.hidden = false;
+    ghost.textContent = dragPress.label;
+    ghost.style.left = (e.clientX + 12) + "px";
+    ghost.style.top = (e.clientY + 12) + "px";
+    clearDropMark();
+    const row = dropTargetAt(e.clientX, e.clientY, dragPress);
+    if (row) row.classList.add("is-drop");
+  }
+
+  function armDrag(e, kind, id, label) {
+    if (e.button !== 0 || dragPress) return;
+    dragPress = { kind: kind, id: id, label: label, x: e.clientX, y: e.clientY, pointerId: e.pointerId, dragging: false };
+    window.addEventListener("pointermove", moveDrag);
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
   }
 
   function folderGlyph() {
@@ -3576,21 +3737,23 @@
     const input = document.createElement("input");
     input.type = "text";
     input.value = folder.name;
+    function finish(cancel) {
+      if (input.dataset.done === "1") return;
+      input.dataset.done = "1";
+      if (cancel) renderNotes();
+      else renameFolder(folder.id, input.value);
+    }
     input.addEventListener("keydown", function (e) {
       e.stopPropagation();
       if (e.code === "Escape") {
         e.preventDefault();
-        input.dataset.cancel = "1";
-        input.blur();
+        finish(true);
       } else if (e.code === "Enter") {
         e.preventDefault();
-        input.blur();
+        finish(false);
       }
     });
-    input.addEventListener("blur", function () {
-      if (input.dataset.cancel === "1") renderNotes();
-      else renameFolder(folder.id, input.value);
-    });
+    input.addEventListener("blur", function () { finish(false); });
     label.replaceWith(input);
     input.focus();
     input.select();
@@ -3598,11 +3761,16 @@
 
   function removeFolder(id) {
     const entry = fileEntry(state.fileName);
-    entry.folders = entry.folders.filter(function (folder) { return folder.id !== id; });
-    entry.notes.forEach(function (note) {
-      if (note.folderId === id) note.folderId = "";
+    const folder = folderById(entry, id);
+    const parent = folder && folder.parentId ? folder.parentId : "";
+    entry.folders.forEach(function (item) {
+      if (item.parentId === id) item.parentId = parent;
     });
-    if (noteFolder === id) noteFolder = "all";
+    entry.notes.forEach(function (note) {
+      if (note.folderId === id) note.folderId = parent;
+    });
+    entry.folders = entry.folders.filter(function (item) { return item.id !== id; });
+    if (noteFolder === id) noteFolder = parent || "all";
     persist();
     renderNotes();
   }
@@ -3647,16 +3815,19 @@
     const card = document.createElement("article");
     card.className = "note-card";
     card.dataset.id = note.id;
-    const title = document.createElement("button");
-    title.type = "button";
+    const title = document.createElement("div");
     title.className = "note-name";
-    title.draggable = true;
+    title.setAttribute("role", "button");
+    title.tabIndex = 0;
     title.textContent = note.name || t("notes");
-    title.addEventListener("dragstart", function (e) {
-      e.dataTransfer.setData("text/plain", note.id);
-      e.dataTransfer.effectAllowed = "move";
+    title.addEventListener("pointerdown", function (e) {
+      armDrag(e, "note", note.id, title.textContent);
     });
     title.addEventListener("click", function () {
+      if (dragMoved) {
+        dragMoved = false;
+        return;
+      }
       if (typeof note.paragraph === "number" && metrics.length) animateToParagraph(note.paragraph);
       else animateToScroll(note.scroll || 0);
     });
@@ -3716,62 +3887,70 @@
     if (!known) noteFolder = "all";
     list.replaceChildren();
     const rows = [
-      { id: "all", name: t("notesAll") },
-      { id: "loose", name: t("notesLoose") }
+      { id: "all", name: t("notesAll"), depth: 0 },
+      { id: "loose", name: t("notesLoose"), depth: 0 }
     ];
-    entry.folders.forEach(function (folder) {
-      rows.push({ id: folder.id, name: folder.name, folder: true });
-    });
+    function addFolders(parentId, depth) {
+      entry.folders.forEach(function (folder) {
+        if ((folder.parentId || "") !== (parentId || "")) return;
+        rows.push({ id: folder.id, name: folder.name, folder: true, depth: depth });
+        addFolders(folder.id, depth + 1);
+      });
+    }
+    addFolders("", 0);
     rows.forEach(function (row) {
       const wrap = document.createElement("div");
       wrap.className = "notes-dir-row" + (noteFolder === row.id ? " is-on" : "");
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "notes-dir-item";
-      button.dataset.id = row.id;
-      if (row.folder) button.appendChild(folderGlyph());
+      wrap.dataset.dropId = row.id;
+      const item = document.createElement("div");
+      item.className = "notes-dir-item" + (row.folder ? " is-folder" : "");
+      item.setAttribute("role", "button");
+      item.tabIndex = 0;
+      item.dataset.id = row.id;
+      item.style.setProperty("--indent", String(row.depth || 0));
+      if (row.folder) item.appendChild(folderGlyph());
       const label = document.createElement("span");
       label.className = "notes-dir-name";
       label.textContent = row.name;
-      button.appendChild(label);
-      const showDelete = row.folder && noteFolder === row.id;
-      if (!showDelete) {
+      item.appendChild(label);
+      const selected = row.folder && noteFolder === row.id;
+      if (!selected) {
         const count = document.createElement("span");
         count.className = "notes-dir-count";
         const amount = row.id === "all" ? entry.notes.length : row.id === "loose" ? entry.notes.filter(function (note) { return !note.folderId; }).length : entry.notes.filter(function (note) { return note.folderId === row.id; }).length;
         count.textContent = String(amount);
-        button.appendChild(count);
+        item.appendChild(count);
       }
-      button.addEventListener("click", function () {
+      if (row.folder) {
+        item.addEventListener("pointerdown", function (e) {
+          if (e.target.closest("input")) return;
+          armDrag(e, "folder", row.id, row.name);
+        });
+      }
+      item.addEventListener("click", function () {
+        if (dragMoved) {
+          dragMoved = false;
+          return;
+        }
+        if (noteFolder === row.id) return;
         noteFolder = row.id;
         renderNotes();
       });
-      if (row.folder) {
-        button.addEventListener("dblclick", function (e) {
-          e.preventDefault();
+      wrap.appendChild(item);
+      if (selected) {
+        const rename = document.createElement("button");
+        rename.type = "button";
+        rename.className = "notes-dir-rename";
+        rename.textContent = t("bookmarkRename");
+        rename.addEventListener("click", function () {
           beginFolderRename(label, { id: row.id, name: row.name });
         });
-      }
-      wrap.appendChild(button);
-      if (showDelete) {
         const remove = document.createElement("button");
         remove.type = "button";
         remove.className = "notes-dir-remove";
         remove.textContent = t("bookmarkRemove");
         remove.addEventListener("click", function () { removeFolder(row.id); });
-        wrap.appendChild(remove);
-      }
-      if (row.id !== "all") {
-        wrap.addEventListener("dragover", function (e) {
-          e.preventDefault();
-          wrap.classList.add("is-drop");
-        });
-        wrap.addEventListener("dragleave", function () { wrap.classList.remove("is-drop"); });
-        wrap.addEventListener("drop", function (e) {
-          e.preventDefault();
-          wrap.classList.remove("is-drop");
-          moveNoteToFolder(e.dataTransfer.getData("text/plain"), row.id === "loose" ? "" : row.id);
-        });
+        wrap.append(rename, remove);
       }
       list.appendChild(wrap);
     });
