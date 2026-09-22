@@ -25,13 +25,20 @@
     color-scheme: light;
   }
 
+  :root[data-theme="dark"] {
+    --bg: #151515;
+    --fg: #E8E8E6;
+    color-scheme: dark;
+  }
+  :root[data-theme="dark"] ::selection { background: rgba(232, 232, 230, 0.18); }
+
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme]) {
       --bg: #151515;
       --fg: #E8E8E6;
       color-scheme: dark;
     }
-    ::selection { background: rgba(232, 232, 230, 0.18); }
+    :root:not([data-theme]) ::selection { background: rgba(232, 232, 230, 0.18); }
   }
 
   * { box-sizing: border-box; }
@@ -183,13 +190,13 @@
   .lang-switch span[data-lang].is-active { opacity: 1; }
   .lang-switch:hover, .lang-switch:focus-visible { opacity: 0.9; }
 
-  #btn-play, #btn-full {
+  #btn-play, #btn-full, #btn-theme {
     width: 28px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
   }
-  #btn-play svg, #btn-full svg { width: 16px; height: 16px; display: block; }
+  #btn-play svg, #btn-full svg, #btn-theme svg { width: 16px; height: 16px; display: block; }
   #btn-play .icon-play, #btn-full .icon-exit { display: none; }
   #btn-play.is-paused .icon-pause { display: none; }
   #btn-play.is-paused .icon-play { display: block; }
@@ -197,7 +204,8 @@
   #btn-full.is-full .icon-exit { display: block; }
 
   #history,
-  #bookmarks {
+  #bookmarks,
+  #notes {
     position: fixed;
     z-index: 8;
     top: 54px;
@@ -211,7 +219,8 @@
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
   }
   #history.is-open,
-  #bookmarks.is-open {
+  #bookmarks.is-open,
+  #notes.is-open {
     opacity: 1;
     visibility: visible;
     transform: none;
@@ -219,7 +228,8 @@
     transition: opacity 0.28s ease, transform 0.28s ease, visibility 0s;
   }
   #history-panel,
-  #bookmark-panel {
+  #bookmark-panel,
+  #notes-panel {
     max-height: min(46vh, 360px);
     overflow: auto;
     padding: 6px 0;
@@ -230,7 +240,8 @@
     scrollbar-width: none;
   }
   #history-panel::-webkit-scrollbar,
-  #bookmark-panel::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  #bookmark-panel::-webkit-scrollbar,
+  #notes-panel::-webkit-scrollbar { display: none; width: 0; height: 0; }
   #history-panel button,
   #history-panel p,
   #bookmark-add,
@@ -300,91 +311,64 @@
     border-bottom: 1px solid color-mix(in srgb, var(--fg) 28%, transparent);
     font-size: 13px;
   }
-  #bookmark-notes {
-    display: block;
-    width: 100%;
-    margin: 0;
-    padding: 10px 16px 6px;
-    text-align: left;
-    font-size: 13px;
-    letter-spacing: 0.14em;
-    opacity: 0.5;
-  }
-  #bookmark-notes:hover,
-  #bookmark-notes:focus-visible { opacity: 0.9; }
-
-  #notes {
-    position: fixed;
-    z-index: 9;
-    top: 88px;
-    right: 28px;
-    width: min(380px, calc(100% - 36px));
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: opacity 0.32s ease, visibility 0s linear 0.32s;
-  }
-  #notes.is-open {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    transition: opacity 0.32s ease, visibility 0s;
-  }
-  #notes.is-drag { transition: none; }
-  #notes-panel {
-    display: flex;
-    flex-direction: column;
-    max-height: min(72vh, 640px);
-    background: color-mix(in srgb, var(--bg) 96%, transparent);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 16px 40px color-mix(in srgb, var(--fg) 6%, transparent);
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
-    font-size: 14px;
-    line-height: 1.55;
-  }
+  #notes-panel { max-height: min(62vh, 560px); }
   #notes-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 12px 14px 8px 16px;
-    cursor: grab;
-    user-select: none;
+    padding: 10px 14px 2px 16px;
   }
-  #notes.is-drag #notes-bar { cursor: grabbing; }
   #notes-title {
     margin: 0;
+    font-size: 13px;
     letter-spacing: 0.14em;
-    opacity: 0.72;
+    opacity: 0.55;
   }
-  #notes-close {
-    letter-spacing: 0.08em;
-    font-size: 12px;
-    opacity: 0.4;
-  }
-  #notes-close:hover,
-  #notes-close:focus-visible { opacity: 0.85; }
-  #notes-search,
-  #notes-tools { padding: 0 16px; }
-  #notes-search {
-    width: 100%;
-    margin: 0 0 8px;
-    padding: 6px 0;
-    background: transparent;
-    border: 0;
-    border-bottom: 1px solid color-mix(in srgb, var(--fg) 22%, transparent);
-    font: inherit;
-    color: inherit;
+  .notes-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
   }
   #notes-add-folder {
-    margin: 0 0 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    opacity: 0.5;
+  }
+  #notes-add-folder svg { width: 14px; height: 14px; display: block; }
+  #notes-add-folder:hover,
+  #notes-add-folder:focus-visible,
+  #notes-close:hover,
+  #notes-close:focus-visible { opacity: 0.9; }
+  #notes-close {
     font-size: 12px;
     letter-spacing: 0.08em;
-    opacity: 0.45;
+    opacity: 0.4;
   }
-  #notes-add-folder:hover,
-  #notes-add-folder:focus-visible { opacity: 0.85; }
+  #notes-search {
+    display: block;
+    width: calc(100% - 28px);
+    margin: 8px 14px 10px;
+    padding: 7px 14px;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--fg) 7%, transparent);
+    box-shadow: none;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    font-size: 13px;
+    color: inherit;
+  }
+  #notes-search:focus,
+  #notes-search:focus-visible { outline: none; box-shadow: none; }
+  #notes-search::-webkit-search-decoration,
+  #notes-search::-webkit-search-cancel-button,
+  #notes-search::-webkit-search-results-button { display: none; appearance: none; -webkit-appearance: none; }
   #notes-list {
     overflow: auto;
     padding: 0 0 12px;
@@ -1020,7 +1004,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.4</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.5</span></button></p>
     </div>
   </div>
 
@@ -1070,6 +1054,7 @@
       <button type="button" id="btn-open" data-i18n="open">打开</button>
       <button type="button" id="btn-history" data-i18n="history">历史</button>
       <button type="button" id="btn-bookmarks" data-i18n="bookmarks">书签</button>
+      <button type="button" id="btn-notes" data-i18n="notes">读书笔记</button>
       <button type="button" id="btn-play" class="is-paused" data-i18n-aria="pause" aria-label="暂停">
         <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M8 5.5v13M16 5.5v13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
@@ -1105,6 +1090,12 @@
           <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path>
         </svg>
       </button>
+      <button type="button" id="btn-theme" aria-label="深色模式">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.4"></circle>
+          <path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"></path>
+        </svg>
+      </button>
       <button type="button" id="btn-lang" class="lang-switch" data-i18n-aria="langLabel">
         <span data-lang="zh">中</span><span> / </span><span data-lang="en">EN</span>
       </button>
@@ -1117,7 +1108,6 @@
 
   <div id="bookmarks">
     <div id="bookmark-panel">
-      <button type="button" id="bookmark-notes">读书笔记</button>
       <button type="button" id="bookmark-add" data-i18n="bookmarkAdd">添加</button>
       <div id="bookmark-list"></div>
     </div>
@@ -1127,12 +1117,17 @@
     <div id="notes-panel" role="dialog" aria-labelledby="notes-title">
       <div id="notes-bar">
         <p id="notes-title" data-i18n="notes">读书笔记</p>
-        <button type="button" id="notes-close" data-i18n="guideClose">关闭</button>
+        <div class="notes-bar-actions">
+          <button type="button" id="notes-add-folder">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3.5 8.2h5.2l1.8 1.8h10v8.2h-17z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
+            </svg>
+            <span data-i18n="notesFolderAdd">+文件夹</span>
+          </button>
+          <button type="button" id="notes-close" data-i18n="guideClose">关闭</button>
+        </div>
       </div>
-      <input id="notes-search" type="search" aria-label="搜索">
-      <div id="notes-tools">
-        <button type="button" id="notes-add-folder" data-i18n="notesFolder">文件夹</button>
-      </div>
+      <input id="notes-search" type="text" autocomplete="off" aria-label="搜索">
       <div id="notes-list"></div>
     </div>
   </div>
@@ -1158,8 +1153,21 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "1.4";
+  const VERSION = "1.5";
   const CHANGELOG = [
+    {
+      version: "1.5",
+      zh: [
+        "书签窗口只显示书签。读书笔记同样开在右上角。",
+        "笔记里的搜索放进胶囊，文件夹在关闭左边，并带有图标。",
+        "全屏和语言之间可以切换黑白。"
+      ],
+      en: [
+        "The bookmark window shows bookmarks. Notes open in the same top-right place.",
+        "Search sits in a capsule. Folders, with an icon, sit beside Close.",
+        "Light and dark switch between full screen and the language control."
+      ]
+    },
     {
       version: "1.4",
       zh: [
@@ -1274,6 +1282,7 @@
     lastSave: 0,
     loopOn: false,
     chromeForcedOff: false,
+    theme: "",
     store: { files: {} }
   };
 
@@ -1357,9 +1366,30 @@
       if (raw.font && FONTS[raw.font]) state.font = raw.font;
       if (raw.lang === "en" || raw.lang === "zh") state.lang = raw.lang;
       if (raw.measure) state.measure = clamp(Number(raw.measure) || MEASURE_DEFAULT, MEASURE_MIN, MEASURE_MAX);
+      if (raw.theme === "light" || raw.theme === "dark") state.theme = raw.theme;
     } catch (err) {
       state.store = { files: {} };
     }
+  }
+
+  function themeIsDark() {
+    if (state.theme === "dark") return true;
+    if (state.theme === "light") return false;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+
+  function applyTheme() {
+    const root = document.documentElement;
+    if (state.theme === "dark" || state.theme === "light") root.setAttribute("data-theme", state.theme);
+    else root.removeAttribute("data-theme");
+    const btn = document.getElementById("btn-theme");
+    if (btn) btn.setAttribute("aria-label", themeIsDark() ? t("themeLight") : t("themeDark"));
+  }
+
+  function toggleTheme() {
+    state.theme = themeIsDark() ? "light" : "dark";
+    persist();
+    applyTheme();
   }
 
   function persist() {
@@ -1368,6 +1398,7 @@
     state.store.font = state.font;
     state.store.lang = state.lang;
     state.store.measure = state.measure;
+    state.store.theme = state.theme;
     try { localStorage.setItem(STORE_KEY, JSON.stringify(state.store)); } catch (err) {}
   }
 
@@ -1452,6 +1483,7 @@
       notes: "读书笔记",
       notesSearch: "搜索",
       notesFolder: "文件夹",
+      notesFolderAdd: "+文件夹",
       notesLoose: "未分类",
       notesHighlight: "高亮",
       notesNeedSelection: "先在正文里选中一段文字。",
@@ -1483,6 +1515,8 @@
       widthLabel: "阅读宽度",
       fontLabel: "字体",
       langLabel: "语言",
+      themeDark: "深色模式",
+      themeLight: "浅色模式",
       preparing: "正在整理文字…",
       ready: "整理完成！阅读器即将打开。",
       pageProgress: "正在整理第 {i} / {n} 页…",
@@ -1537,6 +1571,7 @@
       notes: "Notes",
       notesSearch: "Search",
       notesFolder: "Folder",
+      notesFolderAdd: "+ Folder",
       notesLoose: "Unsorted",
       notesHighlight: "Highlight",
       notesNeedSelection: "Select a passage in the text first.",
@@ -1568,6 +1603,8 @@
       widthLabel: "Measure",
       fontLabel: "Typeface",
       langLabel: "Language",
+      themeDark: "Dark",
+      themeLight: "Light",
       preparing: "Gathering the text…",
       ready: "Ready. The reader is about to open.",
       pageProgress: "Gathering page {i} / {n}…",
@@ -1615,6 +1652,7 @@
     renderHistory();
     renderBookmarks();
     if (notesOpen()) renderNotes();
+    applyTheme();
     fillStats();
   }
 
@@ -2837,7 +2875,7 @@
   }
 
   function scheduleChromeHide() {
-    if (historyOpen() || bookmarksOpen()) return;
+    if (historyOpen() || bookmarksOpen() || notesOpen()) return;
     clearTimeout(chromeTimer);
     chromeTimer = setTimeout(hideChromeNow, CHROME_HIDE);
   }
@@ -2889,6 +2927,7 @@
 
   function openHistoryPanel() {
     closeBookmarks();
+    closeNotes();
     document.getElementById("history").classList.add("is-open");
     revealChrome();
   }
@@ -2921,6 +2960,7 @@
 
   function openBookmarkPanel() {
     closeHistory();
+    closeNotes();
     renderBookmarks();
     document.getElementById("bookmarks").classList.add("is-open");
     revealChrome();
@@ -3006,12 +3046,9 @@
 
   function renderBookmarks() {
     const list = document.getElementById("bookmark-list");
-    const notesBtn = document.getElementById("bookmark-notes");
     if (!list) return;
-    const stored = state.fileName && state.store.files && state.store.files[state.fileName];
-    const noteCount = stored && Array.isArray(stored.notes) ? stored.notes.length : 0;
-    if (notesBtn) notesBtn.textContent = t("notes") + (noteCount ? "  " + noteCount : "");
     list.replaceChildren();
+    const stored = state.fileName && state.store.files && state.store.files[state.fileName];
     const marks = stored && Array.isArray(stored.marks) ? stored.marks : [];
     if (!marks.length) {
       const empty = document.createElement("p");
@@ -3072,6 +3109,7 @@
   function openNotes(focusId) {
     if (!state.fileName || state.mode !== "reading") return;
     closeBookmarks();
+    closeHistory();
     noteFocusId = focusId || "";
     renderNotes();
     document.getElementById("notes").classList.add("is-open");
@@ -3607,8 +3645,12 @@
       if (bookmarksOpen()) closeBookmarks();
       else openBookmarkPanel();
     });
+    document.getElementById("btn-notes").addEventListener("click", function () {
+      if (notesOpen()) closeNotes();
+      else openNotes();
+    });
+    document.getElementById("btn-theme").addEventListener("click", toggleTheme);
     document.getElementById("bookmark-add").addEventListener("click", addBookmark);
-    document.getElementById("bookmark-notes").addEventListener("click", function () { openNotes(); });
     document.getElementById("notes-close").addEventListener("click", closeNotes);
     document.getElementById("notes-add-folder").addEventListener("click", addFolder);
     document.getElementById("notes-search").addEventListener("input", function (e) {
@@ -3616,31 +3658,6 @@
       renderNotes();
     });
     document.getElementById("notes-search").addEventListener("keydown", function (e) { e.stopPropagation(); });
-    (function bindNotesDrag() {
-      const shell = document.getElementById("notes");
-      const bar = document.getElementById("notes-bar");
-      bar.addEventListener("pointerdown", function (e) {
-        if (e.button !== 0 || e.target.closest("button")) return;
-        const rect = shell.getBoundingClientRect();
-        const dx = e.clientX - rect.left;
-        const dy = e.clientY - rect.top;
-        shell.classList.add("is-drag");
-        function move(ev) {
-          const x = Math.min(Math.max(8, ev.clientX - dx), window.innerWidth - rect.width - 8);
-          const y = Math.min(Math.max(8, ev.clientY - dy), window.innerHeight - 64);
-          shell.style.left = x + "px";
-          shell.style.top = y + "px";
-          shell.style.right = "auto";
-        }
-        function up() {
-          shell.classList.remove("is-drag");
-          window.removeEventListener("pointermove", move);
-          window.removeEventListener("pointerup", up);
-        }
-        window.addEventListener("pointermove", move);
-        window.addEventListener("pointerup", up);
-      });
-    })();
     document.addEventListener("pointerdown", function (e) {
       const panel = document.getElementById("history");
       const button = document.getElementById("btn-history");
@@ -3657,6 +3674,9 @@
       if (!panel.classList.contains("is-open")) return;
       if (panel.contains(e.target) || button.contains(e.target)) return;
       closeBookmarks();
+    });
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
+      if (!state.theme) applyTheme();
     });
     statusAction.addEventListener("click", openFilePicker);
     btnPlay.addEventListener("click", togglePlay);
@@ -3698,7 +3718,7 @@
         if (e.clientY > 96) state.chromeForcedOff = false;
         return;
       }
-      if (historyOpen() || bookmarksOpen() || e.clientY <= 80 || chrome.contains(e.target)) revealChrome();
+      if (historyOpen() || bookmarksOpen() || notesOpen() || e.clientY <= 80 || chrome.contains(e.target)) revealChrome();
       else scheduleChromeHide();
     }, { passive: true });
 
@@ -3760,6 +3780,7 @@
   }
 
   loadStore();
+  applyTheme();
   applyTypography();
   applyLang();
   bind();
