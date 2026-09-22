@@ -340,6 +340,26 @@
   .chapter-item:hover,
   .chapter-item:focus-visible,
   .chapter-item.is-current { opacity: 1; }
+  #selection-note {
+    position: fixed;
+    z-index: 9;
+    margin: 0;
+  }
+  #selection-note button {
+    padding: 8px 14px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
+    font-size: 13px;
+    line-height: 1.45;
+    letter-spacing: 0.04em;
+    background: color-mix(in srgb, var(--bg) 96%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 16px 40px color-mix(in srgb, var(--fg) 6%, transparent);
+    opacity: 0.86;
+    white-space: nowrap;
+  }
+  #selection-note button:hover,
+  #selection-note button:focus-visible { opacity: 1; }
   #history.is-open,
   #bookmarks.is-open,
   #chapters.is-open,
@@ -1265,12 +1285,12 @@
         <li><span>Esc</span><span data-i18n="keyEsc">关闭说明，或隐藏控制栏</span></li>
       </ul>
       <p data-i18n="guideMouse">双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。</p>
-      <p data-i18n="guideChrome">鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。书签旁点「读书笔记」之后，它不再是书签，会归到读书笔记里。添加旁边可以导入、导出这一本的书签和读书笔记。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。</p>
+      <p data-i18n="guideChrome">鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。书签旁点「读书笔记」之后，它不再是书签，会归到读书笔记里。选中正文后，可以添加读书笔记。点一下会高亮这段，并开始写。添加旁边可以导入、导出这一本的书签和读书笔记。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。</p>
       <h2 data-i18n="filesH">文件</h2>
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 和 EPUB 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.8</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.9</span></button></p>
     </div>
   </div>
 
@@ -1418,6 +1438,9 @@
     </div>
   </div>
 
+  <div id="selection-note" hidden>
+    <button type="button" id="selection-note-add" data-i18n="selectionNote">添加读书笔记</button>
+  </div>
   <input id="file" type="file" accept=".pdf,.txt,.epub,.eupd,.eupb,text/plain,application/pdf,application/epub+zip" hidden>
   <input id="bookmark-file" type="file" accept="application/json,.json" hidden>
 
@@ -1440,8 +1463,19 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "1.8";
+  const VERSION = "1.9";
   const CHANGELOG = [
+    {
+      version: "1.9",
+      zh: [
+        "选中文字后，可以添加读书笔记。",
+        "点一下会高亮这段，并开始写。"
+      ],
+      en: [
+        "Selecting text offers a note.",
+        "Choosing it highlights the passage and opens the note to write."
+      ]
+    },
     {
       version: "1.8",
       zh: [
@@ -1876,7 +1910,7 @@
       keyF: "全屏",
       keyEsc: "关闭说明，或隐藏控制栏",
       guideMouse: "双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。",
-      guideChrome: "鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。书签旁点「读书笔记」之后，它不再是书签，会归到读书笔记里。添加旁边可以导入、导出这一本的书签和读书笔记。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。",
+      guideChrome: "鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。书签旁点「读书笔记」之后，它不再是书签，会归到读书笔记里。选中正文后，可以添加读书笔记。点一下会高亮这段，并开始写。添加旁边可以导入、导出这一本的书签和读书笔记。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。",
       filesH: "文件",
       guideFiles: "文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。",
       guidePdf: "整理 PDF 时会从网络加载解析组件。TXT 和 EPUB 不需要网络。",
@@ -1909,6 +1943,7 @@
       bookmarkRename: "改名",
       bookmarkRemove: "删除",
       notes: "读书笔记",
+      selectionNote: "添加读书笔记",
       notesSearch: "搜索",
       notesFolder: "文件夹",
       notesFolders: "文件夹",
@@ -1987,7 +2022,7 @@
       keyF: "Full screen",
       keyEsc: "Close the guide, or hide the controls",
       guideMouse: "Double-click the text to pause or continue. The wheel lets auto-scroll step aside for a moment.",
-      guideChrome: "Move the pointer to the top to change speed, size, typeface, and width, to go full screen, or to bookmark this text. A new bookmark is named with the date and time, and the name can be changed. Choosing Notes beside a bookmark moves it into the notes. Beside Add, this book's marks and notes can be imported or exported. In Chrome, an install icon appears at the right of the address bar. The faint number at the lower right is how far you have read. Click it to see how many words.",
+      guideChrome: "Move the pointer to the top to change speed, size, typeface, and width, to go full screen, or to bookmark this text. A new bookmark is named with the date and time, and the name can be changed. Choosing Notes beside a bookmark moves it into the notes. Selecting a passage offers a note. Choosing it highlights the passage and opens the note to write. Beside Add, this book's marks and notes can be imported or exported. In Chrome, an install icon appears at the right of the address bar. The faint number at the lower right is how far you have read. Click it to see how many words.",
       filesH: "Files",
       guideFiles: "The text stays in this browser and is not uploaded. Recently opened files can be opened again. Speed, size, typeface, width, and reading position are remembered.",
       guidePdf: "Reading a PDF loads a parser from the network. TXT and EPUB do not.",
@@ -2020,6 +2055,7 @@
       bookmarkRename: "Rename",
       bookmarkRemove: "Remove",
       notes: "Notes",
+      selectionNote: "Add a note",
       notesSearch: "Search",
       notesFolder: "Folder",
       notesFolders: "Folders",
@@ -3375,7 +3411,7 @@
         state.anim = null;
         state.resumeAt = performance.now() + 900;
       }
-    } else if (state.playing && performance.now() >= state.resumeAt) {
+    } else if (state.playing && performance.now() >= state.resumeAt && !selectionNoteOn()) {
       const max = maxScroll();
       state.scrollPos = Math.min(max, state.scrollPos + state.speed * dt);
       scroller.scrollTop = state.scrollPos;
@@ -3732,6 +3768,7 @@
     closeBookmarks();
     closeNotes();
     closeChapters();
+    hideSelectionNote();
     state.fileName = name || t("untitled");
     state.kind = kind;
     state.chapters = [];
@@ -3831,9 +3868,9 @@
   function armCursor() {
     clearTimeout(cursorTimer);
     document.body.classList.remove("cursor-hidden");
-    if (state.mode !== "reading" || chrome.classList.contains("visible")) return;
+    if (state.mode !== "reading" || chrome.classList.contains("visible") || selectionNoteOn()) return;
     cursorTimer = setTimeout(function () {
-      if (state.mode === "reading" && !chrome.classList.contains("visible")) {
+      if (state.mode === "reading" && !chrome.classList.contains("visible") && !selectionNoteOn()) {
         document.body.classList.add("cursor-hidden");
       }
     }, CURSOR_HIDE);
@@ -4579,6 +4616,83 @@
     renderNotes();
   }
 
+  function selectionNoteOn() {
+    const pop = document.getElementById("selection-note");
+    return !!(pop && !pop.hidden);
+  }
+
+  function hideSelectionNote() {
+    const pop = document.getElementById("selection-note");
+    if (pop) pop.hidden = true;
+  }
+
+  function placeSelectionNote() {
+    const pop = document.getElementById("selection-note");
+    if (!pop || state.mode !== "reading") {
+      hideSelectionNote();
+      return;
+    }
+    const picked = currentSelectionRange();
+    const sel = window.getSelection();
+    if (!picked || !sel || !sel.rangeCount) {
+      hideSelectionNote();
+      return;
+    }
+    const rects = sel.getRangeAt(0).getClientRects();
+    const rect = rects.length ? rects[rects.length - 1] : sel.getRangeAt(0).getBoundingClientRect();
+    if (!rect || (rect.width < 1 && rect.height < 1)) {
+      hideSelectionNote();
+      return;
+    }
+    pop.hidden = false;
+    const width = pop.offsetWidth || 128;
+    const height = pop.offsetHeight || 34;
+    let left = rect.left + rect.width / 2 - width / 2;
+    let top = rect.top - height - 10;
+    if (top < 12) top = rect.bottom + 10;
+    left = Math.max(12, Math.min(left, window.innerWidth - width - 12));
+    top = Math.max(12, Math.min(top, window.innerHeight - height - 12));
+    pop.style.left = left + "px";
+    pop.style.top = top + "px";
+    document.body.classList.remove("cursor-hidden");
+  }
+
+  function focusNoteBody(id) {
+    const area = document.querySelector('#notes-list [data-id="' + id + '"] textarea');
+    if (!area) return;
+    area.focus();
+  }
+
+  function addNoteFromSelection() {
+    const range = currentSelectionRange();
+    if (!range || !state.fileName || state.mode !== "reading") return;
+    const entry = fileEntry(state.fileName);
+    const name = range.quote.replace(/\s+/g, " ").trim();
+    const note = {
+      id: uid(),
+      name: name.slice(0, 18),
+      scroll: Math.round(scroller.scrollTop),
+      paragraph: range.startParagraph,
+      at: Date.now(),
+      folderId: "",
+      body: "",
+      color: "sand",
+      quote: range.quote,
+      startParagraph: range.startParagraph,
+      startOffset: range.startOffset,
+      endParagraph: range.endParagraph,
+      endOffset: range.endOffset
+    };
+    entry.notes.unshift(note);
+    persist();
+    hideSelectionNote();
+    const sel = window.getSelection();
+    if (sel) sel.removeAllRanges();
+    relayoutNotes();
+    openNotes(note.id);
+    focusNoteBody(note.id);
+  }
+
   function setNoteColor(note, color) {
     note.color = color;
     persist();
@@ -5120,6 +5234,14 @@
       return;
     }
     if (state.mode !== "reading") return;
+    if (selectionNoteOn() && e.code === "Escape") {
+      e.preventDefault();
+      hideSelectionNote();
+      const sel = window.getSelection();
+      if (sel) sel.removeAllRanges();
+      releaseFocus();
+      return;
+    }
 
     if (e.code === "Space") {
       e.preventDefault();
@@ -5217,6 +5339,19 @@
     document.getElementById("btn-chapters").addEventListener("click", function () {
       if (chaptersOpen()) closeChapters();
       else openChapterPanel();
+    });
+    const selectionNoteAdd = document.getElementById("selection-note-add");
+    selectionNoteAdd.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    selectionNoteAdd.addEventListener("click", addNoteFromSelection);
+    document.addEventListener("selectionchange", function () {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed) hideSelectionNote();
+    });
+    window.addEventListener("pointerup", function () {
+      setTimeout(placeSelectionNote, 0);
+    });
+    document.addEventListener("keyup", function (e) {
+      if (e.key === "Shift" || e.shiftKey) placeSelectionNote();
     });
     document.getElementById("bookmark-notes").addEventListener("click", function () {
       openNotes();
