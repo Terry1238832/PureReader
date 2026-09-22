@@ -275,12 +275,75 @@
     opacity: 0.4;
   }
 
-  #guide-version {
-    margin: 0.15em 0 0;
+  #guide-version { margin: 0.15em 0 0; }
+  #version-link {
     font-size: 13px;
     letter-spacing: 0.14em;
     opacity: 0.4;
   }
+  #version-link:hover,
+  #version-link:focus-visible { opacity: 0.8; outline: none; }
+
+  #changelog {
+    position: fixed;
+    z-index: 8;
+    left: 18px;
+    bottom: 48px;
+    width: min(420px, calc(100% - 36px));
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: opacity 0.32s ease, transform 0.32s ease, visibility 0s linear 0.32s;
+  }
+  #changelog.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    pointer-events: auto;
+    transition: opacity 0.32s ease, transform 0.32s ease, visibility 0s;
+  }
+  #changelog-panel {
+    position: relative;
+    width: 100%;
+    max-height: min(72vh, 640px);
+    overflow: auto;
+    padding: 22px 22px 18px;
+    background: color-mix(in srgb, var(--bg) 96%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 16px 40px color-mix(in srgb, var(--fg) 6%, transparent);
+    font-size: 17px;
+    line-height: 1.85;
+    scrollbar-width: none;
+  }
+  #changelog-panel::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  #changelog-title {
+    margin: 0 2.4em 1em 0;
+    font-size: 18px;
+    line-height: 1.4;
+    letter-spacing: 0.08em;
+  }
+  #changelog-panel h2 {
+    margin: 1.5em 0 0.35em;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    opacity: 0.45;
+  }
+  #changelog-panel section:first-child h2 { margin-top: 0; }
+  #changelog-panel p { margin: 0 0 0.55em; }
+  #changelog-close {
+    position: sticky;
+    top: 0;
+    float: right;
+    margin: -6px 0 0;
+    letter-spacing: 0.14em;
+    font-size: 13px;
+    opacity: 0.4;
+  }
+  #changelog-close:hover,
+  #changelog-close:focus-visible { opacity: 0.8; }
 
   body.is-drag .hint-idle { display: none; }
   body.is-drag .hint-drop { display: inline; }
@@ -462,7 +525,8 @@
     user-select: none;
   }
   #progress:hover,
-  #progress:focus-visible { opacity: 0.75; }
+  #progress:focus,
+  #progress:focus-visible { opacity: 0.75; outline: none; }
 
   #stats {
     position: fixed;
@@ -485,7 +549,7 @@
   }
   #stats-panel {
     position: relative;
-    padding: 28px 26px 24px;
+    padding: 54px 26px 24px;
     background: color-mix(in srgb, var(--bg) 96%, transparent);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -495,8 +559,9 @@
   }
   #stats-close {
     position: absolute;
-    top: 16px;
-    right: 18px;
+    top: 18px;
+    right: 20px;
+    line-height: 1;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
     font-size: 12px;
     letter-spacing: 0.08em;
@@ -662,7 +727,7 @@
     .width-control { display: none; }
     #guide-panel { padding: 28px 22px 22px; }
     #guide-panel li { grid-template-columns: 5.4em 1fr; }
-    #guide { left: 14px; bottom: 42px; width: min(420px, calc(100% - 28px)); }
+    #guide, #changelog { left: 14px; bottom: 42px; width: min(420px, calc(100% - 28px)); }
     #history, #bookmarks { right: 14px; top: 72px; }
     #landing-lang { right: 14px; top: 12px; }
     #guide-link { left: 14px; bottom: 14px; }
@@ -672,7 +737,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    #chrome, #guide, #history, #bookmarks, #stats { transition: none; }
+    #chrome, #guide, #changelog, #history, #bookmarks, #stats { transition: none; }
   }
 </style>
 </head>
@@ -719,7 +784,15 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.0</span></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.0.1</span></button></p>
+    </div>
+  </div>
+
+  <div id="changelog">
+    <div id="changelog-panel" role="dialog" aria-labelledby="changelog-title">
+      <button type="button" id="changelog-close" data-i18n="guideClose">关闭</button>
+      <p id="changelog-title" data-i18n="changelogTitle">更新日志</p>
+      <div id="changelog-list"></div>
     </div>
   </div>
 
@@ -834,7 +907,29 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "1.0";
+  const VERSION = "1.0.1";
+  const CHANGELOG = [
+    {
+      version: "1.0.1",
+      zh: [
+        "进度窗口里的关闭和下面的字拉开了距离。",
+        "窗口开着时按空格，阅读继续，窗口留着。",
+        "百分号周围不再出现白色方框。",
+        "点说明里的版本号，可以看更新日志。"
+      ],
+      en: [
+        "The close control sits farther from the lines under it.",
+        "Space keeps reading, and the window stays open.",
+        "The percent no longer draws a box around itself.",
+        "Click the version in the guide to read this log."
+      ]
+    },
+    {
+      version: "1.0",
+      zh: ["说明末尾写上版本号。"],
+      en: ["The guide ends with a version number."]
+    }
+  ];
   const SPEED_MIN = 5;
   const SPEED_MAX = 80;
   const SPEED_DEFAULT = 22;
@@ -1007,6 +1102,7 @@
       guidePdf: "整理 PDF 时会从网络加载解析组件。TXT 不需要网络。",
       author: "作者　Terry",
       versionLabel: "版本",
+      changelogTitle: "更新日志",
       open: "打开",
       history: "历史",
       historyEmpty: "还没有打开过",
@@ -1079,6 +1175,7 @@
       guidePdf: "Reading a PDF loads a parser from the network. TXT does not.",
       author: "Author　Terry",
       versionLabel: "Version",
+      changelogTitle: "Changelog",
       open: "Open",
       history: "History",
       historyEmpty: "Nothing opened yet",
@@ -1148,6 +1245,7 @@
       el.classList.toggle("is-active", el.getAttribute("data-lang") === state.lang);
     });
     document.getElementById("app-version").textContent = VERSION;
+    renderChangelog();
     if (state.mode !== "reading") document.title = t("appTitle");
     updatePlayButton();
     updateFullscreenButton();
@@ -1898,6 +1996,38 @@
     document.getElementById("stat-by").textContent = quote[1];
   }
 
+  function changelogOpen() {
+    return document.getElementById("changelog").classList.contains("is-open");
+  }
+
+  function renderChangelog() {
+    const list = document.getElementById("changelog-list");
+    if (!list) return;
+    const lang = state.lang === "en" ? "en" : "zh";
+    list.replaceChildren();
+    CHANGELOG.forEach(function (entry) {
+      const block = document.createElement("section");
+      const heading = document.createElement("h2");
+      heading.textContent = entry.version;
+      block.appendChild(heading);
+      (entry[lang] || entry.zh).forEach(function (text) {
+        const line = document.createElement("p");
+        line.textContent = text;
+        block.appendChild(line);
+      });
+      list.appendChild(block);
+    });
+  }
+
+  function openChangelog() {
+    renderChangelog();
+    document.getElementById("changelog").classList.add("is-open");
+  }
+
+  function closeChangelog() {
+    document.getElementById("changelog").classList.remove("is-open");
+  }
+
   function statsOpen() {
     return document.getElementById("stats").classList.contains("is-open");
   }
@@ -2445,10 +2575,25 @@
 
   function onKey(e) {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (changelogOpen()) {
+      if (e.code === "Escape") {
+        e.preventDefault();
+        closeChangelog();
+      } else if (e.code === "Space") {
+        e.preventDefault();
+      }
+      return;
+    }
     if (statsOpen()) {
       if (e.code === "Escape") {
         e.preventDefault();
         closeStats();
+        return;
+      }
+      if (e.code === "Space" && state.mode === "reading") {
+        e.preventDefault();
+        if (!e.repeat) togglePlay();
+        return;
       }
       return;
     }
@@ -2534,6 +2679,7 @@
     progressEl.addEventListener("click", function () {
       if (statsOpen()) closeStats();
       else openStats();
+      progressEl.blur();
     });
     document.addEventListener("pointerdown", function (e) {
       const panel = document.getElementById("stats");
@@ -2551,7 +2697,20 @@
       var link = document.getElementById("guide-link");
       if (!guide.classList.contains("is-open")) return;
       if (guide.contains(e.target) || link.contains(e.target)) return;
+      if (document.getElementById("changelog").contains(e.target)) return;
       closeGuide();
+    });
+    document.getElementById("version-link").addEventListener("click", function () {
+      if (changelogOpen()) closeChangelog();
+      else openChangelog();
+    });
+    document.getElementById("changelog-close").addEventListener("click", closeChangelog);
+    document.addEventListener("pointerdown", function (e) {
+      const panel = document.getElementById("changelog");
+      const link = document.getElementById("version-link");
+      if (!panel.classList.contains("is-open")) return;
+      if (panel.contains(e.target) || link.contains(e.target)) return;
+      closeChangelog();
     });
     document.getElementById("landing-open").addEventListener("click", openFilePicker);
     document.getElementById("btn-open").addEventListener("click", openFilePicker);
