@@ -275,16 +275,21 @@
   .bookmark-go:hover,
   .bookmark-go:focus-visible { opacity: 1; }
   .bookmark-edit,
-  .bookmark-remove {
+  .bookmark-remove,
+  .bookmark-note {
     flex: none;
     font-size: 12px;
     letter-spacing: 0.04em;
     opacity: 0.38;
+    white-space: nowrap;
   }
   .bookmark-edit:hover,
   .bookmark-edit:focus-visible,
   .bookmark-remove:hover,
-  .bookmark-remove:focus-visible { opacity: 0.85; }
+  .bookmark-remove:focus-visible,
+  .bookmark-note:hover,
+  .bookmark-note:focus-visible,
+  .bookmark-note.is-on { opacity: 0.85; }
   .bookmark-row input {
     flex: 1;
     min-width: 0;
@@ -295,6 +300,202 @@
     border-bottom: 1px solid color-mix(in srgb, var(--fg) 28%, transparent);
     font-size: 13px;
   }
+  #bookmark-notes {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 10px 16px 6px;
+    text-align: left;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    opacity: 0.5;
+  }
+  #bookmark-notes:hover,
+  #bookmark-notes:focus-visible { opacity: 0.9; }
+
+  #notes {
+    position: fixed;
+    z-index: 9;
+    top: 88px;
+    right: 28px;
+    width: min(380px, calc(100% - 36px));
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.32s ease, visibility 0s linear 0.32s;
+  }
+  #notes.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.32s ease, visibility 0s;
+  }
+  #notes.is-drag { transition: none; }
+  #notes-panel {
+    display: flex;
+    flex-direction: column;
+    max-height: min(72vh, 640px);
+    background: color-mix(in srgb, var(--bg) 96%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 16px 40px color-mix(in srgb, var(--fg) 6%, transparent);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  #notes-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px 8px 16px;
+    cursor: grab;
+    user-select: none;
+  }
+  #notes.is-drag #notes-bar { cursor: grabbing; }
+  #notes-title {
+    margin: 0;
+    letter-spacing: 0.14em;
+    opacity: 0.72;
+  }
+  #notes-close {
+    letter-spacing: 0.08em;
+    font-size: 12px;
+    opacity: 0.4;
+  }
+  #notes-close:hover,
+  #notes-close:focus-visible { opacity: 0.85; }
+  #notes-search,
+  #notes-tools { padding: 0 16px; }
+  #notes-search {
+    width: 100%;
+    margin: 0 0 8px;
+    padding: 6px 0;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--fg) 22%, transparent);
+    font: inherit;
+    color: inherit;
+  }
+  #notes-add-folder {
+    margin: 0 0 8px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    opacity: 0.45;
+  }
+  #notes-add-folder:hover,
+  #notes-add-folder:focus-visible { opacity: 0.85; }
+  #notes-list {
+    overflow: auto;
+    padding: 0 0 12px;
+    scrollbar-width: none;
+  }
+  #notes-list::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  .notes-empty {
+    margin: 8px 16px 4px;
+    opacity: 0.42;
+  }
+  .note-folder {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 16px 4px;
+  }
+  .note-folder-name {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    opacity: 0.48;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .note-folder-remove {
+    font-size: 12px;
+    opacity: 0.35;
+  }
+  .note-folder-name:hover,
+  .note-folder-remove:hover,
+  .note-folder-name:focus-visible,
+  .note-folder-remove:focus-visible { opacity: 0.85; }
+  .note-folder input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--fg) 28%, transparent);
+    font: inherit;
+    color: inherit;
+    font-size: 13px;
+  }
+  .note-card { padding: 8px 16px 12px; }
+  .note-name {
+    display: block;
+    width: 100%;
+    margin: 0 0 6px;
+    padding: 0;
+    text-align: left;
+    font-size: 14px;
+    opacity: 0.82;
+  }
+  .note-name:hover,
+  .note-name:focus-visible { opacity: 1; }
+  .note-quote {
+    margin: 0 0 8px;
+    font-family: var(--reading-font);
+    font-size: 14px;
+    line-height: 1.7;
+    opacity: 0.55;
+  }
+  .note-card textarea {
+    width: 100%;
+    min-height: 72px;
+    margin: 0 0 8px;
+    padding: 0 0 6px;
+    resize: vertical;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--fg) 18%, transparent);
+    font-family: var(--reading-font);
+    font-size: 16px;
+    line-height: 1.7;
+    color: inherit;
+  }
+  .note-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .note-highlight,
+  .note-folder-pick {
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    opacity: 0.5;
+  }
+  .note-highlight:hover,
+  .note-highlight:focus-visible { opacity: 0.9; }
+  .note-folder-pick {
+    max-width: 9em;
+    background: transparent;
+    border: 0;
+    color: inherit;
+  }
+  .note-colors { display: inline-flex; gap: 6px; }
+  .note-swatch {
+    width: 12px;
+    height: 12px;
+    padding: 0;
+    border-radius: 50%;
+  }
+  .note-swatch.is-on { outline: 1px solid color-mix(in srgb, var(--fg) 55%, transparent); outline-offset: 2px; }
+  mark.note-hl { color: inherit; }
+  .hl-sand { background: color-mix(in srgb, #c4a15a 46%, transparent); }
+  .hl-moss { background: color-mix(in srgb, #6a9a72 46%, transparent); }
+  .hl-dusk { background: color-mix(in srgb, #6e8cbf 46%, transparent); }
+  .hl-clay { background: color-mix(in srgb, #c47b74 46%, transparent); }
 
   #guide-author {
     margin: 1.8em 0 0.2em;
@@ -756,7 +957,8 @@
     #guide-panel { padding: 28px 22px 22px; }
     #guide-panel li { grid-template-columns: 5.4em 1fr; }
     #guide, #changelog { left: 14px; bottom: 42px; width: min(420px, calc(100% - 28px)); }
-    #history, #bookmarks { right: 14px; top: 72px; }
+    #history, #bookmarks, #notes { right: 14px; top: 72px; }
+    #notes { width: min(380px, calc(100% - 28px)); }
     #landing-lang { right: 14px; top: 12px; }
     #guide-link { left: 14px; bottom: 14px; }
     #progress { right: 14px; bottom: 12px; }
@@ -765,7 +967,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    #chrome, #guide, #changelog, #history, #bookmarks, #stats, #status { transition: none; }
+    #chrome, #guide, #changelog, #history, #bookmarks, #notes, #stats, #status { transition: none; }
   }
 </style>
 </head>
@@ -818,7 +1020,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.3</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.4</span></button></p>
     </div>
   </div>
 
@@ -915,8 +1117,23 @@
 
   <div id="bookmarks">
     <div id="bookmark-panel">
+      <button type="button" id="bookmark-notes">读书笔记</button>
       <button type="button" id="bookmark-add" data-i18n="bookmarkAdd">添加</button>
       <div id="bookmark-list"></div>
+    </div>
+  </div>
+
+  <div id="notes">
+    <div id="notes-panel" role="dialog" aria-labelledby="notes-title">
+      <div id="notes-bar">
+        <p id="notes-title" data-i18n="notes">读书笔记</p>
+        <button type="button" id="notes-close" data-i18n="guideClose">关闭</button>
+      </div>
+      <input id="notes-search" type="search" aria-label="搜索">
+      <div id="notes-tools">
+        <button type="button" id="notes-add-folder" data-i18n="notesFolder">文件夹</button>
+      </div>
+      <div id="notes-list"></div>
     </div>
   </div>
 
@@ -941,8 +1158,19 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "1.3";
+  const VERSION = "1.4";
   const CHANGELOG = [
+    {
+      version: "1.4",
+      zh: [
+        "书签的改名和删除之间可以收成读书笔记。",
+        "书签窗口顶部打开读书笔记。可以搜索、拖动、高亮选中的文字、写下内容、用文件夹分类，并更换高亮颜色。"
+      ],
+      en: [
+        "A bookmark can become a note, between rename and remove.",
+        "Notes open from the top of the bookmark window. Search, drag, highlight a passage, write, sort into folders, and change the highlight color."
+      ]
+    },
     {
       version: "1.3",
       zh: [
@@ -1061,6 +1289,10 @@
   let opening = null;
   let historyItems = [];
   let charLens = [];
+  let paragraphTexts = [];
+  let noteQuery = "";
+  let noteFocusId = "";
+  let noteHintId = "";
 
   const QUOTES = {
     zh: [
@@ -1143,6 +1375,8 @@
     const files = state.store.files || (state.store.files = {});
     if (!files[name] || typeof files[name] !== "object") files[name] = { scroll: 0, at: 0, marks: [] };
     if (!Array.isArray(files[name].marks)) files[name].marks = [];
+    if (!Array.isArray(files[name].notes)) files[name].notes = [];
+    if (!Array.isArray(files[name].folders)) files[name].folders = [];
     return files[name];
   }
 
@@ -1153,7 +1387,9 @@
     files[state.fileName] = {
       scroll: Math.round(scroller.scrollTop),
       at: Date.now(),
-      marks: Array.isArray(prev.marks) ? prev.marks : []
+      marks: Array.isArray(prev.marks) ? prev.marks : [],
+      notes: Array.isArray(prev.notes) ? prev.notes : [],
+      folders: Array.isArray(prev.folders) ? prev.folders : []
     };
     const keys = Object.keys(files);
     if (keys.length > 40) {
@@ -1198,7 +1434,7 @@
       keyF: "全屏",
       keyEsc: "关闭说明，或隐藏控制栏",
       guideMouse: "双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。",
-      guideChrome: "鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。",
+      guideChrome: "鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。书签旁可以收成读书笔记。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。",
       filesH: "文件",
       guideFiles: "文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。",
       guidePdf: "整理 PDF 时会从网络加载解析组件。TXT 不需要网络。",
@@ -1213,6 +1449,16 @@
       bookmarkEmpty: "这一本还没有书签",
       bookmarkRename: "改名",
       bookmarkRemove: "删除",
+      notes: "读书笔记",
+      notesSearch: "搜索",
+      notesFolder: "文件夹",
+      notesLoose: "未分类",
+      notesHighlight: "高亮",
+      notesNeedSelection: "先在正文里选中一段文字。",
+      notesEmpty: "还没有读书笔记。在书签旁点「读书笔记」。",
+      notesNoHit: "没有找到。",
+      notesBody: "写下这一段。",
+      notesRemoveFolder: "删除",
       statRead: "已读",
       statUnread: "未读",
       statSince: "距上一书签",
@@ -1273,7 +1519,7 @@
       keyF: "Full screen",
       keyEsc: "Close the guide, or hide the controls",
       guideMouse: "Double-click the text to pause or continue. The wheel lets auto-scroll step aside for a moment.",
-      guideChrome: "Move the pointer to the top to change speed, size, typeface, and width, to go full screen, or to bookmark this text. A new bookmark is named with the date and time, and the name can be changed. In Chrome, an install icon appears at the right of the address bar. The faint number at the lower right is how far you have read. Click it to see how many words.",
+      guideChrome: "Move the pointer to the top to change speed, size, typeface, and width, to go full screen, or to bookmark this text. A new bookmark is named with the date and time, and the name can be changed. Beside a bookmark, it can become a note. In Chrome, an install icon appears at the right of the address bar. The faint number at the lower right is how far you have read. Click it to see how many words.",
       filesH: "Files",
       guideFiles: "The text stays in this browser and is not uploaded. Recently opened files can be opened again. Speed, size, typeface, width, and reading position are remembered.",
       guidePdf: "Reading a PDF loads a parser from the network. TXT does not.",
@@ -1288,6 +1534,16 @@
       bookmarkEmpty: "No bookmarks in this text yet",
       bookmarkRename: "Rename",
       bookmarkRemove: "Remove",
+      notes: "Notes",
+      notesSearch: "Search",
+      notesFolder: "Folder",
+      notesLoose: "Unsorted",
+      notesHighlight: "Highlight",
+      notesNeedSelection: "Select a passage in the text first.",
+      notesEmpty: "No notes yet. Use Notes beside a bookmark.",
+      notesNoHit: "Nothing matches.",
+      notesBody: "Write about this passage.",
+      notesRemoveFolder: "Remove",
       statRead: "Read",
       statUnread: "Still to read",
       statSince: "Since the last bookmark",
@@ -1350,12 +1606,15 @@
       el.classList.toggle("is-active", el.getAttribute("data-lang") === state.lang);
     });
     document.getElementById("app-version").textContent = VERSION;
+    const notesSearch = document.getElementById("notes-search");
+    if (notesSearch) notesSearch.placeholder = t("notesSearch");
     renderChangelog();
     if (state.mode !== "reading") document.title = t("appTitle");
     updatePlayButton();
     updateFullscreenButton();
     renderHistory();
     renderBookmarks();
+    if (notesOpen()) renderNotes();
     fillStats();
   }
 
@@ -1384,6 +1643,7 @@
     progressEl.style.opacity = "";
     document.body.classList.remove("is-reading", "is-opening", "cursor-hidden");
     statusEl.classList.remove("is-leaving", "is-dismissing", "is-swap");
+    closeNotes();
     document.title = t("appTitle");
     landing.hidden = false;
     statusEl.hidden = true;
@@ -1960,6 +2220,7 @@
   /* ---------- 阅读界面 ---------- */
 
   function renderParagraphs(paragraphs) {
+    paragraphTexts = paragraphs.slice();
     charLens = paragraphs.map(function (text) { return text.replace(/\s/g, "").length; });
     const frag = document.createDocumentFragment();
     paragraphs.forEach(function (text, index) {
@@ -1969,6 +2230,7 @@
       frag.appendChild(p);
     });
     reader.replaceChildren(frag);
+    paintHighlights();
   }
 
   function layoutTop(el) {
@@ -2508,6 +2770,7 @@
     const job = ++openJob;
     closeHistory();
     closeBookmarks();
+    closeNotes();
     state.fileName = name || t("untitled");
     state.mode = "processing";
     revealToken += 1;
@@ -2634,6 +2897,12 @@
     document.getElementById("history").classList.remove("is-open");
   }
 
+  const NOTE_COLORS = ["sand", "moss", "dusk", "clay"];
+
+  function uid() {
+    return Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+  }
+
   function pad2(n) {
     return (n < 10 ? "0" : "") + n;
   }
@@ -2696,9 +2965,15 @@
   function removeBookmark(id) {
     if (!state.fileName) return;
     const entry = fileEntry(state.fileName);
+    const mark = entry.marks.filter(function (item) { return item.id === id; })[0];
     entry.marks = entry.marks.filter(function (item) { return item.id !== id; });
+    entry.notes = entry.notes.filter(function (item) {
+      return item.markId !== id && (!mark || item.id !== mark.noteId);
+    });
     persist();
+    relayoutNotes();
     renderBookmarks();
+    if (notesOpen()) renderNotes();
   }
 
   function beginRename(row, mark) {
@@ -2731,9 +3006,12 @@
 
   function renderBookmarks() {
     const list = document.getElementById("bookmark-list");
+    const notesBtn = document.getElementById("bookmark-notes");
     if (!list) return;
-    list.replaceChildren();
     const stored = state.fileName && state.store.files && state.store.files[state.fileName];
+    const noteCount = stored && Array.isArray(stored.notes) ? stored.notes.length : 0;
+    if (notesBtn) notesBtn.textContent = t("notes") + (noteCount ? "  " + noteCount : "");
+    list.replaceChildren();
     const marks = stored && Array.isArray(stored.marks) ? stored.marks : [];
     if (!marks.length) {
       const empty = document.createElement("p");
@@ -2759,6 +3037,16 @@
         e.stopPropagation();
         beginRename(row, mark);
       });
+      const noteBtn = document.createElement("button");
+      noteBtn.type = "button";
+      noteBtn.className = "bookmark-note" + (mark.noteId ? " is-on" : "");
+      noteBtn.textContent = t("notes");
+      noteBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        const existed = !!mark.noteId;
+        const note = makeNoteFromMark(mark);
+        if (existed && note) openNotes(note.id);
+      });
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "bookmark-remove";
@@ -2767,13 +3055,411 @@
         e.stopPropagation();
         removeBookmark(mark.id);
       });
-      row.append(go, edit, remove);
+      row.append(go, edit, noteBtn, remove);
       list.appendChild(row);
     });
   }
 
+  function notesOpen() {
+    return document.getElementById("notes").classList.contains("is-open");
+  }
+
+  function closeNotes() {
+    const shell = document.getElementById("notes");
+    if (shell) shell.classList.remove("is-open");
+  }
+
+  function openNotes(focusId) {
+    if (!state.fileName || state.mode !== "reading") return;
+    closeBookmarks();
+    noteFocusId = focusId || "";
+    renderNotes();
+    document.getElementById("notes").classList.add("is-open");
+  }
+
+  function makeNoteFromMark(mark) {
+    if (!state.fileName || !mark) return null;
+    const entry = fileEntry(state.fileName);
+    let note = entry.notes.filter(function (item) {
+      return item.id === mark.noteId || item.markId === mark.id;
+    })[0];
+    if (note) {
+      mark.noteId = note.id;
+      return note;
+    }
+    note = {
+      id: uid(),
+      markId: mark.id,
+      folderId: "",
+      body: "",
+      color: "sand",
+      quote: "",
+      startParagraph: null,
+      startOffset: 0,
+      endParagraph: null,
+      endOffset: 0
+    };
+    entry.notes.unshift(note);
+    mark.noteId = note.id;
+    persist();
+    renderBookmarks();
+    return note;
+  }
+
+  function offsetInParagraph(paragraph, container, offset) {
+    const probe = document.createRange();
+    probe.setStart(paragraph, 0);
+    try { probe.setEnd(container, offset); } catch (err) { return null; }
+    return probe.toString().length;
+  }
+
+  function currentSelectionRange() {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+    const range = sel.getRangeAt(0);
+    function paraOf(node) {
+      const el = node && node.nodeType === 1 ? node : node && node.parentElement;
+      return el && el.closest ? el.closest("#reader > p") : null;
+    }
+    const startP = paraOf(range.startContainer);
+    const endP = paraOf(range.endContainer);
+    if (!startP || !endP) return null;
+    let startParagraph = Array.prototype.indexOf.call(reader.children, startP);
+    let endParagraph = Array.prototype.indexOf.call(reader.children, endP);
+    let startOffset = offsetInParagraph(startP, range.startContainer, range.startOffset);
+    let endOffset = offsetInParagraph(endP, range.endContainer, range.endOffset);
+    if (startOffset === null || endOffset === null || startParagraph < 0 || endParagraph < 0) return null;
+    if (startParagraph > endParagraph || (startParagraph === endParagraph && startOffset > endOffset)) {
+      const swapP = startParagraph;
+      const swapO = startOffset;
+      startParagraph = endParagraph;
+      startOffset = endOffset;
+      endParagraph = swapP;
+      endOffset = swapO;
+    }
+    let quote = "";
+    for (let i = startParagraph; i <= endParagraph; i++) {
+      const text = paragraphTexts[i] || "";
+      const from = i === startParagraph ? startOffset : 0;
+      const to = i === endParagraph ? endOffset : text.length;
+      quote += text.slice(from, to);
+      if (i < endParagraph) quote += "\n";
+    }
+    quote = quote.replace(/\s+/g, " ").trim();
+    if (!quote) return null;
+    return {
+      startParagraph: startParagraph,
+      startOffset: startOffset,
+      endParagraph: endParagraph,
+      endOffset: endOffset,
+      quote: quote.slice(0, 240)
+    };
+  }
+
+  function paintHighlights() {
+    if (!reader.children.length || !paragraphTexts.length) return;
+    const entry = state.fileName && state.store.files && state.store.files[state.fileName];
+    const notes = entry && Array.isArray(entry.notes) ? entry.notes : [];
+    const byParagraph = [];
+    notes.forEach(function (note) {
+      if (typeof note.startParagraph !== "number" || typeof note.endParagraph !== "number") return;
+      for (let i = note.startParagraph; i <= note.endParagraph && i < paragraphTexts.length; i++) {
+        const text = paragraphTexts[i] || "";
+        const start = i === note.startParagraph ? note.startOffset : 0;
+        const end = i === note.endParagraph ? note.endOffset : text.length;
+        if (end <= start) continue;
+        if (!byParagraph[i]) byParagraph[i] = [];
+        byParagraph[i].push({
+          start: Math.max(0, start),
+          end: Math.min(text.length, end),
+          color: NOTE_COLORS.indexOf(note.color) >= 0 ? note.color : "sand",
+          id: note.id
+        });
+      }
+    });
+    for (let i = 0; i < reader.children.length; i++) {
+      const text = paragraphTexts[i] || "";
+      const ranges = (byParagraph[i] || []).filter(function (range) { return range.end > range.start; });
+      const p = reader.children[i];
+      if (!ranges.length) {
+        if (p.textContent !== text) p.textContent = text;
+        continue;
+      }
+      const points = [0, text.length];
+      ranges.forEach(function (range) {
+        points.push(range.start, range.end);
+      });
+      const stops = points.filter(function (point, index) {
+        return points.indexOf(point) === index;
+      }).sort(function (a, b) { return a - b; });
+      const frag = document.createDocumentFragment();
+      for (let s = 0; s < stops.length - 1; s++) {
+        const from = stops[s];
+        const to = stops[s + 1];
+        if (to <= from) continue;
+        const slice = text.slice(from, to);
+        let hit = null;
+        ranges.forEach(function (range) {
+          if (range.start <= from && range.end >= to) hit = range;
+        });
+        if (!hit) {
+          frag.appendChild(document.createTextNode(slice));
+        } else {
+          const mark = document.createElement("mark");
+          mark.className = "note-hl hl-" + hit.color;
+          mark.dataset.note = hit.id;
+          mark.textContent = slice;
+          frag.appendChild(mark);
+        }
+      }
+      p.replaceChildren(frag);
+    }
+  }
+
+  function relayoutNotes() {
+    paintHighlights();
+    if (state.mode !== "reading") return;
+    measure();
+    applyFocus();
+  }
+
+  function highlightNote(note) {
+    const range = currentSelectionRange();
+    if (!range) {
+      noteHintId = note.id;
+      renderNotes();
+      return;
+    }
+    noteHintId = "";
+    note.startParagraph = range.startParagraph;
+    note.startOffset = range.startOffset;
+    note.endParagraph = range.endParagraph;
+    note.endOffset = range.endOffset;
+    note.quote = range.quote;
+    if (!note.color) note.color = "sand";
+    persist();
+    relayoutNotes();
+    renderNotes();
+  }
+
+  function setNoteColor(note, color) {
+    note.color = color;
+    persist();
+    relayoutNotes();
+    renderNotes();
+  }
+
+  function addFolder() {
+    if (!state.fileName) return;
+    const entry = fileEntry(state.fileName);
+    const base = t("notesFolder");
+    const names = entry.folders.map(function (folder) { return folder.name; });
+    let name = base;
+    let n = 2;
+    while (names.indexOf(name) >= 0) {
+      name = base + " " + n;
+      n += 1;
+    }
+    const folder = { id: uid(), name: name };
+    entry.folders.push(folder);
+    persist();
+    renderNotes();
+    const heading = document.querySelector('.note-folder[data-id="' + folder.id + '"] .note-folder-name');
+    if (heading) heading.click();
+  }
+
+  function renameFolder(id, name) {
+    const entry = fileEntry(state.fileName);
+    const folder = entry.folders.filter(function (item) { return item.id === id; })[0];
+    if (!folder) return;
+    folder.name = name.trim() || folder.name;
+    persist();
+    renderNotes();
+  }
+
+  function beginFolderRename(row, folder) {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = folder.name;
+    input.addEventListener("keydown", function (e) {
+      e.stopPropagation();
+      if (e.code === "Escape") {
+        e.preventDefault();
+        input.dataset.cancel = "1";
+        input.blur();
+      } else if (e.code === "Enter") {
+        e.preventDefault();
+        input.blur();
+      }
+    });
+    input.addEventListener("blur", function () {
+      if (input.dataset.cancel === "1") renderNotes();
+      else renameFolder(folder.id, input.value);
+    });
+    row.replaceChildren(input);
+    input.focus();
+    input.select();
+  }
+
+  function removeFolder(id) {
+    const entry = fileEntry(state.fileName);
+    entry.folders = entry.folders.filter(function (folder) { return folder.id !== id; });
+    entry.notes.forEach(function (note) {
+      if (note.folderId === id) note.folderId = "";
+    });
+    persist();
+    renderNotes();
+  }
+
+  function noteCard(entry, note) {
+    const mark = entry.marks.filter(function (item) { return item.id === note.markId; })[0];
+    const card = document.createElement("article");
+    card.className = "note-card";
+    card.dataset.id = note.id;
+    const title = document.createElement("button");
+    title.type = "button";
+    title.className = "note-name";
+    title.textContent = mark ? mark.name : t("notes");
+    title.addEventListener("click", function () {
+      if (!mark) return;
+      if (typeof mark.paragraph === "number" && metrics.length) animateToParagraph(mark.paragraph);
+      else animateToScroll(mark.scroll || 0);
+    });
+    const quote = document.createElement("p");
+    quote.className = "note-quote";
+    quote.textContent = note.quote || (noteHintId === note.id ? t("notesNeedSelection") : "");
+    if (!note.quote && noteHintId !== note.id) quote.hidden = true;
+    const body = document.createElement("textarea");
+    body.value = note.body || "";
+    body.placeholder = t("notesBody");
+    body.addEventListener("keydown", function (e) { e.stopPropagation(); });
+    body.addEventListener("input", function () {
+      note.body = body.value;
+      persist();
+    });
+    const actions = document.createElement("div");
+    actions.className = "note-actions";
+    const hl = document.createElement("button");
+    hl.type = "button";
+    hl.className = "note-highlight";
+    hl.textContent = t("notesHighlight");
+    hl.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    hl.addEventListener("click", function () { highlightNote(note); });
+    const colors = document.createElement("span");
+    colors.className = "note-colors";
+    NOTE_COLORS.forEach(function (color) {
+      const dot = document.createElement("button");
+      dot.type = "button";
+      dot.className = "note-swatch hl-" + color + (note.color === color ? " is-on" : "");
+      dot.setAttribute("aria-label", color);
+      dot.addEventListener("click", function () { setNoteColor(note, color); });
+      colors.appendChild(dot);
+    });
+    const pick = document.createElement("select");
+    pick.className = "note-folder-pick";
+    const loose = document.createElement("option");
+    loose.value = "";
+    loose.textContent = t("notesLoose");
+    pick.appendChild(loose);
+    entry.folders.forEach(function (folder) {
+      const option = document.createElement("option");
+      option.value = folder.id;
+      option.textContent = folder.name;
+      pick.appendChild(option);
+    });
+    pick.value = note.folderId || "";
+    pick.addEventListener("change", function () {
+      note.folderId = pick.value;
+      persist();
+      renderNotes();
+    });
+    pick.addEventListener("keydown", function (e) { e.stopPropagation(); });
+    actions.append(hl, colors, pick);
+    card.append(title, quote, body, actions);
+    return card;
+  }
+
+  function appendNoteGroup(list, entry, id, name, notes, removable) {
+    const head = document.createElement("div");
+    head.className = "note-folder";
+    if (id) head.dataset.id = id;
+    if (removable) {
+      const label = document.createElement("button");
+      label.type = "button";
+      label.className = "note-folder-name";
+      label.textContent = name;
+      label.addEventListener("click", function () { beginFolderRename(head, { id: id, name: name }); });
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "note-folder-remove";
+      remove.textContent = t("notesRemoveFolder");
+      remove.addEventListener("click", function () { removeFolder(id); });
+      head.append(label, remove);
+    } else {
+      const label = document.createElement("p");
+      label.className = "note-folder-name";
+      label.textContent = name;
+      head.appendChild(label);
+    }
+    list.appendChild(head);
+    notes.forEach(function (note) { list.appendChild(noteCard(entry, note)); });
+  }
+
+  function renderNotes() {
+    const list = document.getElementById("notes-list");
+    if (!list || !state.fileName) return;
+    const entry = fileEntry(state.fileName);
+    const q = noteQuery.trim().toLowerCase();
+    list.replaceChildren();
+    function matches(note) {
+      if (!q) return true;
+      const mark = entry.marks.filter(function (item) { return item.id === note.markId; })[0];
+      const blob = ((mark && mark.name) || "") + " " + (note.body || "") + " " + (note.quote || "");
+      return blob.toLowerCase().indexOf(q) >= 0;
+    }
+    const visible = entry.notes.filter(matches);
+    if (!entry.notes.length && !entry.folders.length) {
+      const empty = document.createElement("p");
+      empty.className = "notes-empty";
+      empty.textContent = t("notesEmpty");
+      list.appendChild(empty);
+      return;
+    }
+    const loose = visible.filter(function (note) { return !note.folderId; });
+    if (loose.length) appendNoteGroup(list, entry, "", t("notesLoose"), loose, false);
+    entry.folders.forEach(function (folder) {
+      const items = visible.filter(function (note) { return note.folderId === folder.id; });
+      if (q && !items.length) return;
+      appendNoteGroup(list, entry, folder.id, folder.name, items, true);
+    });
+    if (q && !visible.length) {
+      const empty = document.createElement("p");
+      empty.className = "notes-empty";
+      empty.textContent = t("notesNoHit");
+      list.appendChild(empty);
+    }
+    if (noteFocusId) {
+      const card = list.querySelector('[data-id="' + noteFocusId + '"]');
+      if (card && card.scrollIntoView) card.scrollIntoView({ block: "nearest" });
+    }
+  }
+
   function onKey(e) {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (notesOpen()) {
+      const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest("#notes textarea, #notes input, #notes select");
+      if (typing) return;
+      if (e.code === "Escape") {
+        e.preventDefault();
+        closeNotes();
+        return;
+      }
+      if (e.code === "Space" && state.mode === "reading") {
+        e.preventDefault();
+        if (!e.repeat) togglePlay();
+      }
+      return;
+    }
     if (changelogOpen()) {
       if (e.code === "Escape") {
         e.preventDefault();
@@ -2922,6 +3608,39 @@
       else openBookmarkPanel();
     });
     document.getElementById("bookmark-add").addEventListener("click", addBookmark);
+    document.getElementById("bookmark-notes").addEventListener("click", function () { openNotes(); });
+    document.getElementById("notes-close").addEventListener("click", closeNotes);
+    document.getElementById("notes-add-folder").addEventListener("click", addFolder);
+    document.getElementById("notes-search").addEventListener("input", function (e) {
+      noteQuery = e.target.value;
+      renderNotes();
+    });
+    document.getElementById("notes-search").addEventListener("keydown", function (e) { e.stopPropagation(); });
+    (function bindNotesDrag() {
+      const shell = document.getElementById("notes");
+      const bar = document.getElementById("notes-bar");
+      bar.addEventListener("pointerdown", function (e) {
+        if (e.button !== 0 || e.target.closest("button")) return;
+        const rect = shell.getBoundingClientRect();
+        const dx = e.clientX - rect.left;
+        const dy = e.clientY - rect.top;
+        shell.classList.add("is-drag");
+        function move(ev) {
+          const x = Math.min(Math.max(8, ev.clientX - dx), window.innerWidth - rect.width - 8);
+          const y = Math.min(Math.max(8, ev.clientY - dy), window.innerHeight - 64);
+          shell.style.left = x + "px";
+          shell.style.top = y + "px";
+          shell.style.right = "auto";
+        }
+        function up() {
+          shell.classList.remove("is-drag");
+          window.removeEventListener("pointermove", move);
+          window.removeEventListener("pointerup", up);
+        }
+        window.addEventListener("pointermove", move);
+        window.addEventListener("pointerup", up);
+      });
+    })();
     document.addEventListener("pointerdown", function (e) {
       const panel = document.getElementById("history");
       const button = document.getElementById("btn-history");
