@@ -216,6 +216,7 @@
 
   #history,
   #bookmarks,
+  #chapters,
   #notes {
     position: fixed;
     z-index: 8;
@@ -311,8 +312,37 @@
   .import-actions button { font-size: 13px; opacity: 0.62; }
   .import-actions button:hover,
   .import-actions button:focus-visible { opacity: 1; }
+  #chapters { left: 28px; right: auto; width: min(240px, calc(100% - 40px)); }
+  #chapter-panel {
+    max-height: min(70vh, 640px);
+    overflow: auto;
+    padding: 6px 0;
+    background: color-mix(in srgb, var(--bg) 96%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 16px 40px color-mix(in srgb, var(--fg) 6%, transparent);
+    scrollbar-width: none;
+  }
+  #chapter-panel::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  .chapter-item {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 8px 16px 8px calc(16px + var(--indent, 0) * 12px);
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.45;
+    opacity: 0.55;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .chapter-item:hover,
+  .chapter-item:focus-visible,
+  .chapter-item.is-current { opacity: 1; }
   #history.is-open,
   #bookmarks.is-open,
+  #chapters.is-open,
   #notes.is-open {
     opacity: 1;
     visibility: visible;
@@ -1175,6 +1205,7 @@
     #guide-panel li { grid-template-columns: 5.4em 1fr; }
     #guide, #changelog { left: 14px; bottom: 42px; width: min(420px, calc(100% - 28px)); }
     #history, #bookmarks, #notes { right: 14px; top: 72px; }
+    #chapters { left: 14px; top: 72px; }
     #notes { width: min(560px, calc(100% - 28px)); }
     #notes-dir { width: 132px; }
     #landing-lang { right: 14px; top: 12px; }
@@ -1186,7 +1217,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     :root { transition: none; }
-    #chrome, #guide, #changelog, #history, #bookmarks, #notes, #stats, #status { transition: none; }
+    #chrome, #guide, #changelog, #history, #bookmarks, #chapters, #notes, #stats, #status { transition: none; }
   }
 </style>
 </head>
@@ -1206,7 +1237,7 @@
       <button type="button" id="landing-open">
         <span class="landing-title" data-i18n="openText">打开一段文字</span>
         <span class="landing-hint">
-          <span class="hint-idle" data-i18n-html="hintIdle">拖入 PDF / TXT<br>或点击选择文件</span>
+          <span class="hint-idle" data-i18n-html="hintIdle">拖入 PDF / TXT / EPUB<br>或点击选择文件</span>
           <span class="hint-drop" data-i18n="hintDrop">松开以开始阅读</span>
         </span>
       </button>
@@ -1221,7 +1252,7 @@
       <p data-i18n="guideLead">把一篇文字放进来。页眉、页脚和单独一行的页码会被拿掉，只留下可以长时间读的正文。</p>
       <p data-i18n="guideFocus">文字自己缓慢上移。眼睛停在屏幕中央，靠近上下边缘的句子会慢慢变淡。</p>
       <h2 data-i18n="guideOpenH">打开</h2>
-      <p data-i18n="guideOpen">拖入 PDF 或 TXT，或点击页面选择。按 O 也可以。最近读过的会出现在首页，也可以从顶部的历史里再打开。</p>
+      <p data-i18n="guideOpen">拖入 PDF、TXT 或 EPUB，或点击页面选择。按 O 也可以。最近读过的会出现在首页，也可以从顶部的历史里再打开。EPUB 打开后，左边可以选择章节。</p>
       <h2 data-i18n="keysH">键盘</h2>
       <ul>
         <li><span>空格</span><span data-i18n="keySpace">暂停或继续</span></li>
@@ -1237,9 +1268,9 @@
       <p data-i18n="guideChrome">鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。书签旁点「读书笔记」之后，它不再是书签，会归到读书笔记里。添加旁边可以导入、导出这一本的书签和读书笔记。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。</p>
       <h2 data-i18n="filesH">文件</h2>
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
-      <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
+      <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 和 EPUB 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.7</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.8</span></button></p>
     </div>
   </div>
 
@@ -1289,6 +1320,7 @@
       <button type="button" id="btn-open" data-i18n="open">打开</button>
       <button type="button" id="btn-history" data-i18n="history">历史</button>
       <button type="button" id="btn-bookmarks" data-i18n="bookmarks">书签</button>
+      <button type="button" id="btn-chapters" data-i18n="chapters" hidden>章节</button>
       <button type="button" id="btn-play" class="is-paused" data-i18n-aria="pause" aria-label="暂停">
         <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M8 5.5v13M16 5.5v13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
@@ -1340,6 +1372,12 @@
     <div id="history-panel"></div>
   </div>
 
+  <div id="chapters">
+    <div id="chapter-panel">
+      <div id="chapter-list"></div>
+    </div>
+  </div>
+
   <div id="bookmarks">
     <div id="bookmark-panel">
       <div class="bookmark-head">
@@ -1380,7 +1418,7 @@
     </div>
   </div>
 
-  <input id="file" type="file" accept=".pdf,.txt,text/plain,application/pdf" hidden>
+  <input id="file" type="file" accept=".pdf,.txt,.epub,.eupd,.eupb,text/plain,application/pdf,application/epub+zip" hidden>
   <input id="bookmark-file" type="file" accept="application/json,.json" hidden>
 
 <script>
@@ -1402,8 +1440,19 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "1.7";
+  const VERSION = "1.8";
   const CHANGELOG = [
+    {
+      version: "1.8",
+      zh: [
+        "可以打开 EPUB。",
+        "读 EPUB 时，左边可以选择章节。"
+      ],
+      en: [
+        "EPUB files can be opened.",
+        "While reading an EPUB, chapters can be chosen from the left."
+      ]
+    },
     {
       version: "1.7",
       zh: [
@@ -1594,6 +1643,9 @@
   const state = {
     mode: "landing",
     fileName: "",
+    kind: "",
+    chapters: [],
+    chapterMark: -1,
     speed: SPEED_DEFAULT,
     fontSize: narrowScreen ? 19 : 21,
     font: "song",
@@ -1805,7 +1857,7 @@
       appTitle: "阅读",
       openText: "打开一段文字",
       landingPurpose: "只留下正文，眼睛停在中央。",
-      hintIdle: "拖入 PDF / TXT<br>或点击选择文件",
+      hintIdle: "拖入 PDF / TXT / EPUB<br>或点击选择文件",
       hintDrop: "松开以开始阅读",
       guideTitle: "说明",
       guideClose: "关闭",
@@ -1813,7 +1865,7 @@
       guideLead: "把一篇文字放进来。页眉、页脚和单独一行的页码会被拿掉，只留下可以长时间读的正文。",
       guideFocus: "文字自己缓慢上移。眼睛停在屏幕中央，靠近上下边缘的句子会慢慢变淡。",
       guideOpenH: "打开",
-      guideOpen: "拖入 PDF 或 TXT，或点击页面选择。按 O 也可以。最近读过的会出现在首页，也可以从顶部的历史里再打开。",
+      guideOpen: "拖入 PDF、TXT 或 EPUB，或点击页面选择。按 O 也可以。最近读过的会出现在首页，也可以从顶部的历史里再打开。EPUB 打开后，左边可以选择章节。",
       keysH: "键盘",
       keySpace: "暂停或继续",
       keyUp: "上一段，下一段",
@@ -1827,7 +1879,7 @@
       guideChrome: "鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。书签旁点「读书笔记」之后，它不再是书签，会归到读书笔记里。添加旁边可以导入、导出这一本的书签和读书笔记。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。",
       filesH: "文件",
       guideFiles: "文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。",
-      guidePdf: "整理 PDF 时会从网络加载解析组件。TXT 不需要网络。",
+      guidePdf: "整理 PDF 时会从网络加载解析组件。TXT 和 EPUB 不需要网络。",
       author: "作者　Terry",
       versionLabel: "版本",
       changelogTitle: "更新日志",
@@ -1835,6 +1887,7 @@
       history: "历史",
       historyEmpty: "还没有打开过",
       bookmarks: "书签",
+      chapters: "章节",
       bookmarkAdd: "添加",
       bookmarkTransfer: "导入导出",
       bookmarkExport: "导出",
@@ -1898,7 +1951,10 @@
       preparing: "正在整理文字…",
       ready: "整理完成！阅读器即将打开。",
       pageProgress: "正在整理第 {i} / {n} 页…",
-      needFile: "请打开 PDF 或 TXT 文件",
+      needFile: "请打开 PDF、TXT 或 EPUB 文件",
+      emptyEpub: "没有可读的章节。",
+      badEpub: "无法读取这份 EPUB。",
+      lockedEpub: "这份 EPUB 读不了，可能有加密。",
       emptyPdf: "没有提取到文字。这份 PDF 可能是扫描件。",
       emptyTxt: "没有可读的文字。",
       locked: "这份 PDF 有密码，无法在本地打开。",
@@ -1912,7 +1968,7 @@
       appTitle: "Read",
       openText: "Open a text",
       landingPurpose: "Only the text remains. Your eyes stay at the center.",
-      hintIdle: "Drop a PDF or TXT<br>or click to choose",
+      hintIdle: "Drop a PDF, TXT, or EPUB<br>or click to choose",
       hintDrop: "Release to start reading",
       guideTitle: "Guide",
       guideClose: "Close",
@@ -1920,7 +1976,7 @@
       guideLead: "Bring in a piece of writing. Headers, footers, and page numbers on a line of their own are taken away.",
       guideFocus: "The words drift slowly upward. Your eyes stay at the center, and lines near the edges fade.",
       guideOpenH: "Open",
-      guideOpen: "Drop a PDF or TXT, or click to choose. O does the same. Recent texts stay on the first page, and under History at the top.",
+      guideOpen: "Drop a PDF, TXT, or EPUB, or click to choose. O does the same. Recent texts stay on the first page, and under History at the top. An EPUB opens with its chapters on the left.",
       keysH: "Keys",
       keySpace: "Pause or continue",
       keyUp: "Previous paragraph, next paragraph",
@@ -1934,7 +1990,7 @@
       guideChrome: "Move the pointer to the top to change speed, size, typeface, and width, to go full screen, or to bookmark this text. A new bookmark is named with the date and time, and the name can be changed. Choosing Notes beside a bookmark moves it into the notes. Beside Add, this book's marks and notes can be imported or exported. In Chrome, an install icon appears at the right of the address bar. The faint number at the lower right is how far you have read. Click it to see how many words.",
       filesH: "Files",
       guideFiles: "The text stays in this browser and is not uploaded. Recently opened files can be opened again. Speed, size, typeface, width, and reading position are remembered.",
-      guidePdf: "Reading a PDF loads a parser from the network. TXT does not.",
+      guidePdf: "Reading a PDF loads a parser from the network. TXT and EPUB do not.",
       author: "Author　Terry",
       versionLabel: "Version",
       changelogTitle: "Changelog",
@@ -1942,6 +1998,7 @@
       history: "History",
       historyEmpty: "Nothing opened yet",
       bookmarks: "Bookmarks",
+      chapters: "Chapters",
       bookmarkAdd: "Add",
       bookmarkTransfer: "Import / Export",
       bookmarkExport: "Export",
@@ -2005,7 +2062,10 @@
       preparing: "Gathering the text…",
       ready: "Ready. The reader is about to open.",
       pageProgress: "Gathering page {i} / {n}…",
-      needFile: "Open a PDF or TXT file",
+      needFile: "Open a PDF, TXT, or EPUB file",
+      emptyEpub: "No readable chapters.",
+      badEpub: "Could not read this EPUB.",
+      lockedEpub: "This EPUB can't be read. It may be encrypted.",
       emptyPdf: "No text found. This PDF may be a scan.",
       emptyTxt: "No readable text.",
       locked: "This PDF is locked with a password.",
@@ -2286,6 +2346,386 @@
       try { return new TextDecoder("gb18030").decode(bytes).replace(/^\uFEFF/, ""); } catch (err) {}
     }
     return utf8;
+  }
+
+  function epubFail(code) {
+    const err = new Error(code || "epub");
+    err.code = code || "epub";
+    return err;
+  }
+
+  function readU16(bytes, offset) {
+    return bytes[offset] | (bytes[offset + 1] << 8);
+  }
+
+  function readU32(bytes, offset) {
+    return (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0;
+  }
+
+  function unzip(buffer) {
+    const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+    let eocd = -1;
+    const min = Math.max(0, bytes.length - (22 + 65535));
+    for (let i = bytes.length - 22; i >= min; i--) {
+      if (readU32(bytes, i) === 0x06054b50) {
+        eocd = i;
+        break;
+      }
+    }
+    if (eocd < 0) throw epubFail("epub");
+    const count = readU16(bytes, eocd + 10);
+    let offset = readU32(bytes, eocd + 16);
+    if (offset === 0xFFFFFFFF) throw epubFail("epub");
+    const files = {};
+    for (let n = 0; n < count; n++) {
+      if (offset + 46 > bytes.length || readU32(bytes, offset) !== 0x02014b50) throw epubFail("epub");
+      const method = readU16(bytes, offset + 10);
+      const compSize = readU32(bytes, offset + 20);
+      const nameLen = readU16(bytes, offset + 28);
+      const extraLen = readU16(bytes, offset + 30);
+      const commentLen = readU16(bytes, offset + 32);
+      const localOff = readU32(bytes, offset + 42);
+      const name = new TextDecoder("utf-8").decode(bytes.subarray(offset + 46, offset + 46 + nameLen)).replace(/\\/g, "/");
+      offset += 46 + nameLen + extraLen + commentLen;
+      if (!name || name.charAt(name.length - 1) === "/") continue;
+      if (localOff + 30 > bytes.length || readU32(bytes, localOff) !== 0x04034b50) throw epubFail("epub");
+      const dataOff = localOff + 30 + readU16(bytes, localOff + 26) + readU16(bytes, localOff + 28);
+      if (dataOff + compSize > bytes.length) throw epubFail("epub");
+      files[name] = { method: method, bytes: bytes.subarray(dataOff, dataOff + compSize) };
+    }
+    return files;
+  }
+
+  function findZip(files, path) {
+    if (!path) return "";
+    if (files[path]) return path;
+    const lower = path.toLowerCase();
+    const keys = Object.keys(files);
+    for (let i = 0; i < keys.length; i++) {
+      if (keys[i].toLowerCase() === lower) return keys[i];
+    }
+    return "";
+  }
+
+  async function inflateRaw(bytes) {
+    if (typeof DecompressionStream !== "function") throw epubFail("epub");
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+
+  async function zipBytes(entry) {
+    if (!entry) throw epubFail("epub");
+    if (entry.method === 0) return entry.bytes;
+    if (entry.method === 8) return inflateRaw(entry.bytes);
+    throw epubFail("locked");
+  }
+
+  async function zipText(files, path) {
+    const key = findZip(files, path);
+    if (!key) throw epubFail("epub");
+    const raw = await zipBytes(files[key]);
+    return new TextDecoder("utf-8").decode(raw).replace(/^\uFEFF/, "");
+  }
+
+  function safeDecode(value) {
+    try { return decodeURIComponent(value); } catch (err) { return value; }
+  }
+
+  function joinZip(baseDir, file) {
+    const parts = (baseDir + file).split("/");
+    const out = [];
+    parts.forEach(function (part) {
+      if (!part || part === ".") return;
+      if (part === "..") out.pop();
+      else out.push(part);
+    });
+    return out.join("/");
+  }
+
+  function resolveHref(baseDir, href) {
+    const raw = String(href || "").split("?")[0];
+    const hash = raw.indexOf("#");
+    const file = hash >= 0 ? raw.slice(0, hash) : raw;
+    const frag = hash >= 0 ? safeDecode(raw.slice(hash + 1)) : "";
+    if (!file) return { path: "", frag: frag };
+    const path = file.charAt(0) === "/" ? safeDecode(file.replace(/^\/+/, "")) : joinZip(baseDir, safeDecode(file));
+    return { path: path, frag: frag };
+  }
+
+  function dirOf(path) {
+    const i = path.lastIndexOf("/");
+    return i >= 0 ? path.slice(0, i + 1) : "";
+  }
+
+  function byLocal(root, name) {
+    if (!root || !root.getElementsByTagName) return [];
+    const all = root.getElementsByTagName("*");
+    const out = [];
+    for (let i = 0; i < all.length; i++) {
+      if (all[i].localName === name) out.push(all[i]);
+    }
+    return out;
+  }
+
+  function parseMarkup(text) {
+    const xml = new DOMParser().parseFromString(text, "application/xhtml+xml");
+    const root = xml.documentElement;
+    if (root && root.localName !== "parsererror" && !xml.querySelector("parsererror")) return root;
+    const html = new DOMParser().parseFromString(text, "text/html");
+    return html.body || html.documentElement;
+  }
+
+  function plainHtml(text) {
+    let value = String(text || "").replace(/\u00a0/g, " ");
+    value = value.replace(/[ \t\f\v]*\n[ \t\f\v]*/g, function (gap, offset, all) {
+      const before = all.charAt(offset - 1);
+      const after = all.charAt(offset + gap.length);
+      if (/[\u3400-\u9fff]/.test(before) && /[\u3400-\u9fff]/.test(after)) return "";
+      return " ";
+    });
+    return value.replace(/[ \t]{2,}/g, " ").replace(/^\s+|\s+$/g, "");
+  }
+
+  function htmlBlocks(html) {
+    const root = parseMarkup(html);
+    const blocks = [];
+    const anchors = {};
+    const blockTags = { p: 1, h1: 1, h2: 1, h3: 1, h4: 1, h5: 1, h6: 1, li: 1, blockquote: 1, pre: 1, figcaption: 1, dt: 1, dd: 1 };
+    const skipTags = { script: 1, style: 1, nav: 1, svg: 1, head: 1 };
+    function hasBlocks(el) {
+      const kids = el.children || [];
+      for (let i = 0; i < kids.length; i++) {
+        const tag = kids[i].localName;
+        if (skipTags[tag]) continue;
+        if (blockTags[tag] || tag === "div" || tag === "section" || tag === "article" || tag === "ul" || tag === "ol" || tag === "blockquote") return true;
+        if (hasBlocks(kids[i])) return true;
+      }
+      return false;
+    }
+    function mark(el, index) {
+      if (el.id) anchors[el.id] = index;
+      const named = el.getAttribute && el.getAttribute("name");
+      if (named) anchors[named] = index;
+    }
+    function visit(el) {
+      if (!el || el.nodeType !== 1) return;
+      const tag = el.localName;
+      if (skipTags[tag]) return;
+      const at = blocks.length;
+      mark(el, at);
+      if ((blockTags[tag] || tag === "div") && !hasBlocks(el)) {
+        const text = plainHtml(el.textContent || "");
+        if (text) {
+          const atBlock = blocks.length;
+          mark(el, atBlock);
+          if (el.querySelectorAll) {
+            const named = el.querySelectorAll("[id]");
+            for (let n = 0; n < named.length; n++) {
+              if (named[n].id) anchors[named[n].id] = atBlock;
+            }
+          }
+          blocks.push(text);
+        }
+        return;
+      }
+      const kids = el.children || [];
+      if (!kids.length) {
+        const text = plainHtml(el.textContent || "");
+        if (text && tag !== "body" && tag !== "html") blocks.push(text);
+        return;
+      }
+      for (let i = 0; i < kids.length; i++) visit(kids[i]);
+    }
+    visit(root);
+    return { blocks: blocks, anchors: anchors };
+  }
+
+  function tocFromNav(root) {
+    const navs = byLocal(root, "nav");
+    let nav = null;
+    for (let i = 0; i < navs.length; i++) {
+      const type = [
+        navs[i].getAttribute("epub:type") || "",
+        navs[i].getAttribute("type") || "",
+        (navs[i].getAttributeNS && navs[i].getAttributeNS("http://www.idpf.org/2007/ops", "type")) || ""
+      ].join(" ");
+      if (/\btoc\b/.test(type)) {
+        nav = navs[i];
+        break;
+      }
+    }
+    if (!nav && navs.length) nav = navs[0];
+    if (!nav) return [];
+    const lists = byLocal(nav, "ol");
+    if (!lists.length) return [];
+    const items = [];
+    function walk(list, depth) {
+      const children = list.children || [];
+      for (let i = 0; i < children.length; i++) {
+        const li = children[i];
+        if (li.localName !== "li") continue;
+        let link = null;
+        let sub = null;
+        const inner = li.children || [];
+        for (let j = 0; j < inner.length; j++) {
+          if (!link && (inner[j].localName === "a" || inner[j].localName === "span")) link = inner[j];
+          if (inner[j].localName === "ol") sub = inner[j];
+        }
+        if (link) {
+          const title = plainHtml(link.textContent || "");
+          if (title) items.push({ title: title, href: link.getAttribute("href") || "", depth: depth });
+        }
+        if (sub && depth < 5) walk(sub, depth + 1);
+      }
+    }
+    walk(lists[0], 0);
+    return items;
+  }
+
+  function tocFromNcx(root) {
+    const maps = byLocal(root, "navMap");
+    if (!maps.length) return [];
+    const items = [];
+    function walk(parent, depth) {
+      const children = parent.children || [];
+      for (let i = 0; i < children.length; i++) {
+        const point = children[i];
+        if (point.localName !== "navPoint") continue;
+        let title = "";
+        let href = "";
+        const inner = point.children || [];
+        for (let j = 0; j < inner.length; j++) {
+          if (inner[j].localName === "navLabel") title = plainHtml(inner[j].textContent || "");
+          if (inner[j].localName === "content") href = inner[j].getAttribute("src") || "";
+        }
+        if (title) items.push({ title: title, href: href, depth: Math.min(depth, 5) });
+        if (depth < 5) walk(point, depth + 1);
+      }
+    }
+    walk(maps[0], 0);
+    return items;
+  }
+
+  function htmlKind(type, href) {
+    const kind = (type || "").toLowerCase();
+    if (/ncx|opf|css|image|font|audio|video|javascript/.test(kind)) return false;
+    if (kind.indexOf("html") >= 0) return true;
+    return /\.(xhtml|html|htm)$/i.test(href || "");
+  }
+
+  async function parseEpub(buffer) {
+    const files = unzip(buffer);
+    let opfPath = "";
+    const containerKey = findZip(files, "META-INF/container.xml");
+    if (containerKey) {
+      const container = parseMarkup(await zipText(files, containerKey));
+      const roots = byLocal(container, "rootfile");
+      for (let i = 0; i < roots.length; i++) {
+        const full = roots[i].getAttribute("full-path") || "";
+        if (full) {
+          opfPath = findZip(files, safeDecode(full).replace(/^\/+/, ""));
+          if (opfPath) break;
+        }
+      }
+    }
+    if (!opfPath) {
+      const keys = Object.keys(files);
+      for (let i = 0; i < keys.length; i++) {
+        if (/\.opf$/i.test(keys[i])) {
+          opfPath = keys[i];
+          break;
+        }
+      }
+    }
+    if (!opfPath) throw epubFail("epub");
+    const opf = parseMarkup(await zipText(files, opfPath));
+    const base = dirOf(opfPath);
+    const manifest = {};
+    byLocal(opf, "item").forEach(function (item) {
+      const id = item.getAttribute("id");
+      if (!id) return;
+      manifest[id] = {
+        href: item.getAttribute("href") || "",
+        type: item.getAttribute("media-type") || "",
+        props: item.getAttribute("properties") || ""
+      };
+    });
+    const spine = byLocal(opf, "spine")[0];
+    const tocId = spine ? (spine.getAttribute("toc") || "") : "";
+    const linear = [];
+    const hidden = [];
+    byLocal(opf, "itemref").forEach(function (ref) {
+      const item = manifest[ref.getAttribute("idref") || ""];
+      if (!item || !htmlKind(item.type, item.href)) return;
+      const target = resolveHref(base, item.href);
+      const key = findZip(files, target.path);
+      if (!key) return;
+      const row = { key: key };
+      if (ref.getAttribute("linear") === "no") hidden.push(row);
+      else linear.push(row);
+    });
+    const docs = linear.length ? linear : hidden;
+    const paragraphs = [];
+    const docIndex = {};
+    for (let i = 0; i < docs.length; i++) {
+      const doc = docs[i];
+      const parsed = htmlBlocks(await zipText(files, doc.key));
+      const start = paragraphs.length;
+      const blockAt = [];
+      parsed.blocks.forEach(function (text) {
+        blockAt.push(paragraphs.length);
+        splitLong(text).forEach(function (part) {
+          if (part) paragraphs.push(part);
+        });
+      });
+      const anchors = {};
+      Object.keys(parsed.anchors).forEach(function (id) {
+        const block = parsed.anchors[id];
+        anchors[id] = block < blockAt.length ? blockAt[block] : paragraphs.length;
+      });
+      docIndex[doc.key] = { start: start, anchors: anchors };
+    }
+    let toc = [];
+    const keys = Object.keys(manifest);
+    let navHref = "";
+    let ncxHref = "";
+    keys.forEach(function (id) {
+      const item = manifest[id];
+      if (/\bnav\b/.test(item.props)) navHref = item.href;
+      if (/ncx/.test((item.type || "").toLowerCase()) || id === tocId) ncxHref = item.href;
+    });
+    if (navHref) {
+      try { toc = tocFromNav(parseMarkup(await zipText(files, findZip(files, resolveHref(base, navHref).path)))); } catch (err) { toc = []; }
+    }
+    if (!toc.length && ncxHref) {
+      try { toc = tocFromNcx(parseMarkup(await zipText(files, findZip(files, resolveHref(base, ncxHref).path)))); } catch (err) { toc = []; }
+    }
+    const seen = {};
+    let chapters = [];
+    toc.forEach(function (item) {
+      const at = (function () {
+        const target = resolveHref(base, item.href);
+        const key = findZip(files, target.path);
+        const doc = key && docIndex[key];
+        if (!doc) return -1;
+        if (target.frag && typeof doc.anchors[target.frag] === "number") return doc.anchors[target.frag];
+        return doc.start;
+      })();
+      if (at < 0) return;
+      const key = at + "\n" + item.title;
+      if (seen[key]) return;
+      seen[key] = true;
+      chapters.push({ title: item.title, paragraph: at, depth: item.depth || 0 });
+    });
+    if (!chapters.length && docs.length > 1) {
+      docs.forEach(function (doc, index) {
+        const start = docIndex[doc.key].start;
+        const title = paragraphs[start] ? paragraphs[start].slice(0, 28) : "";
+        chapters.push({ title: title || String(index + 1), paragraph: start, depth: 0 });
+      });
+    }
+    if (chapters.length > 400) chapters = chapters.slice(0, 400);
+    return { paragraphs: paragraphs, chapters: chapters };
   }
 
   function percentile(values, p) {
@@ -2769,6 +3209,7 @@
       }
     }
     state.active = active;
+    markCurrentChapter();
 
     for (let i = lo; i < end; i++) {
       const mid = metrics[i].top + metrics[i].height / 2;
@@ -3023,8 +3464,78 @@
     }, 220);
   }
 
-  function enterReading(paragraphs) {
+  function chaptersOpen() {
+    const panel = document.getElementById("chapters");
+    return !!(panel && panel.classList.contains("is-open"));
+  }
+
+  function closeChapters() {
+    const panel = document.getElementById("chapters");
+    if (panel) panel.classList.remove("is-open");
+  }
+
+  function syncChapterButton() {
+    const button = document.getElementById("btn-chapters");
+    if (!button) return;
+    button.hidden = !(state.mode === "reading" && state.kind === "epub" && state.chapters.length);
+  }
+
+  function chapterAt(paragraph) {
+    let best = -1;
+    let bestAt = -1;
+    for (let i = 0; i < state.chapters.length; i++) {
+      const at = state.chapters[i].paragraph;
+      if (at <= paragraph && at >= bestAt) {
+        bestAt = at;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  function markCurrentChapter() {
+    if (!chaptersOpen()) return;
+    const index = chapterAt(state.active);
+    if (index === state.chapterMark) return;
+    state.chapterMark = index;
+    const buttons = document.querySelectorAll("#chapter-list .chapter-item");
+    for (let i = 0; i < buttons.length; i++) buttons[i].classList.toggle("is-current", i === index);
+    if (index >= 0 && buttons[index] && buttons[index].scrollIntoView) buttons[index].scrollIntoView({ block: "nearest" });
+  }
+
+  function renderChapters() {
+    const list = document.getElementById("chapter-list");
+    if (!list) return;
+    list.replaceChildren();
+    state.chapterMark = -1;
+    state.chapters.forEach(function (chapter) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "chapter-item";
+      button.style.setProperty("--indent", String(chapter.depth || 0));
+      button.textContent = chapter.title;
+      button.title = chapter.title;
+      button.addEventListener("click", function () {
+        animateToParagraph(chapter.paragraph || 0);
+        state.chapterMark = -1;
+        markCurrentChapter();
+      });
+      list.appendChild(button);
+    });
+    markCurrentChapter();
+  }
+
+  function openChapterPanel() {
+    if (!state.chapters.length) return;
+    renderChapters();
+    document.getElementById("chapters").classList.add("is-open");
+    revealChrome();
+  }
+
+  function enterReading(paragraphs, chapters) {
     renderParagraphs(paragraphs);
+    state.chapters = Array.isArray(chapters) ? chapters : [];
+    state.chapterMark = -1;
     state.mode = "reading";
     state.playing = true;
     state.anim = null;
@@ -3039,6 +3550,9 @@
     progressEl.hidden = false;
     chrome.hidden = false;
     chrome.classList.remove("visible");
+    syncChapterButton();
+    closeChapters();
+    if (state.kind === "epub" && state.chapters.length) openChapterPanel();
 
     const saved = state.store.files && state.store.files[state.fileName];
     scroller.scrollTop = saved && typeof saved.scroll === "number" ? saved.scroll : 0;
@@ -3083,6 +3597,10 @@
   function openFilePicker() {
     fileInput.value = "";
     fileInput.click();
+  }
+
+  function isEpubFile(file) {
+    return file.type === "application/epub+zip" || /\.(epub|eupd|eupb)$/i.test(file.name || "");
   }
 
   function isPdfFile(file) {
@@ -3205,7 +3723,7 @@
       setStatus(t("historyMissing"), true);
       return;
     }
-    beginOpen(known.name, known.kind === "pdf" ? "pdf" : "txt", Promise.resolve(known.buffer));
+    beginOpen(known.name, known.kind === "pdf" || known.kind === "epub" ? known.kind : "txt", Promise.resolve(known.buffer));
   }
 
   function beginOpen(name, kind, bufferPromise) {
@@ -3213,7 +3731,12 @@
     closeHistory();
     closeBookmarks();
     closeNotes();
+    closeChapters();
     state.fileName = name || t("untitled");
+    state.kind = kind;
+    state.chapters = [];
+    state.chapterMark = -1;
+    syncChapterButton();
     state.mode = "processing";
     revealToken += 1;
     opening = null;
@@ -3235,27 +3758,41 @@
       let kept = buffer;
       try { kept = buffer.slice(0); } catch (err) {}
       if (kind === "pdf") return parsePdf(buffer).then(function (paragraphs) { return { paragraphs: paragraphs, buffer: kept }; });
+      if (kind === "epub") return parseEpub(kept).then(function (book) {
+        return { paragraphs: book.paragraphs, chapters: book.chapters, buffer: kept };
+      });
       return { paragraphs: parseTxt(decodeText(kept)), buffer: kept };
     }).then(function (result) {
       if (!result || job !== openJob) return;
       if (!result.paragraphs.length) {
-        setStatus(kind === "pdf" ? t("emptyPdf") : t("emptyTxt"), true);
         state.mode = "landing";
+        state.kind = "";
+        syncChapterButton();
+        setStatus(kind === "pdf" ? t("emptyPdf") : (kind === "epub" ? t("emptyEpub") : t("emptyTxt")), true);
         return;
       }
-      enterReading(result.paragraphs);
+      enterReading(result.paragraphs, result.chapters);
       saveHistory(state.fileName, kind, result.buffer).then(refreshHistory);
     }).catch(function (err) {
       if (job !== openJob) return;
-      const message = err && err.code === "locked" ? t("locked") : (kind === "pdf" ? t("badPdf") : t("badFile"));
-      setStatus(message, true);
       state.mode = "landing";
+      state.kind = "";
+      state.chapters = [];
+      syncChapterButton();
+      const message = err && err.code === "locked"
+        ? (kind === "epub" ? t("lockedEpub") : t("locked"))
+        : (kind === "pdf" ? t("badPdf") : (kind === "epub" ? t("badEpub") : t("badFile")));
+      setStatus(message, true);
     });
   }
 
   function handleFiles(fileList) {
     const file = fileList && fileList[0];
     if (!file) return;
+    if (isEpubFile(file)) {
+      beginOpen(file.name || t("untitled"), "epub", readBuffer(file));
+      return;
+    }
     if (!isPdfFile(file) && !isTxtFile(file)) {
       setStatus(t("needFile"), true);
       state.mode = "landing";
@@ -3279,7 +3816,7 @@
   }
 
   function scheduleChromeHide() {
-    if (historyOpen() || bookmarksOpen() || notesOpen()) return;
+    if (historyOpen() || bookmarksOpen() || notesOpen() || chaptersOpen()) return;
     clearTimeout(chromeTimer);
     chromeTimer = setTimeout(hideChromeNow, CHROME_HIDE);
   }
@@ -4502,6 +5039,14 @@
 
   function onKey(e) {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (chaptersOpen()) {
+      if (e.code === "Escape") {
+        e.preventDefault();
+        closeChapters();
+        releaseFocus();
+      }
+      return;
+    }
     if (notesOpen()) {
       const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest("#notes textarea, #notes input, #notes select");
       if (typing) return;
@@ -4669,6 +5214,10 @@
       if (bookmarksOpen()) closeBookmarks();
       else openBookmarkPanel();
     });
+    document.getElementById("btn-chapters").addEventListener("click", function () {
+      if (chaptersOpen()) closeChapters();
+      else openChapterPanel();
+    });
     document.getElementById("bookmark-notes").addEventListener("click", function () {
       openNotes();
     });
@@ -4708,6 +5257,13 @@
     });
     document.querySelectorAll(".lang-switch").forEach(function (button) {
       button.addEventListener("click", toggleLang);
+    });
+    document.addEventListener("pointerdown", function (e) {
+      const panel = document.getElementById("chapters");
+      const button = document.getElementById("btn-chapters");
+      if (!panel.classList.contains("is-open")) return;
+      if (panel.contains(e.target) || (button && button.contains(e.target))) return;
+      closeChapters();
     });
     document.addEventListener("pointerdown", function (e) {
       const panel = document.getElementById("bookmarks");
