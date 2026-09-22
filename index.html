@@ -1324,7 +1324,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 和 EPUB 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.0</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.0.1</span></button></p>
     </div>
   </div>
 
@@ -1503,8 +1503,17 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "2.0";
+  const VERSION = "2.0.1";
   const CHANGELOG = [
+    {
+      version: "2.0.1",
+      zh: [
+        "高亮中间去掉一段之后，再选中整段，可以全部去掉。"
+      ],
+      en: [
+        "After a gap is cut from a highlight, selecting the rest of it removes the highlight."
+      ]
+    },
     {
       version: "2.0",
       zh: [
@@ -4657,7 +4666,7 @@
       const ranges = (byParagraph[i] || []).filter(function (range) { return range.end > range.start; });
       const p = reader.children[i];
       if (!ranges.length) {
-        if (p.textContent !== text) p.textContent = text;
+        if (p.textContent !== text || p.querySelector("mark")) p.textContent = text;
         continue;
       }
       const points = [0, text.length];
