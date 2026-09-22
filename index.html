@@ -784,7 +784,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.0.1</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.1</span></button></p>
     </div>
   </div>
 
@@ -907,8 +907,19 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "1.0.1";
+  const VERSION = "1.1";
   const CHANGELOG = [
+    {
+      version: "1.1",
+      zh: [
+        "进度窗口里的名言多了一些。每次打开，换一句。",
+        "打开更新日志时，说明窗口会关上。"
+      ],
+      en: [
+        "The progress window has more quotations. Each time it opens, the line changes.",
+        "Opening the changelog closes the guide."
+      ]
+    },
     {
       version: "1.0.1",
       zh: [
@@ -997,17 +1008,50 @@
   const QUOTES = {
     zh: [
       ["读书破万卷，下笔如有神。", "杜甫"],
+      ["富贵必从勤苦得，男儿须读五车书。", "杜甫"],
       ["旧书不厌百回读，熟读深思子自知。", "苏轼"],
+      ["腹有诗书气自华。", "苏轼"],
       ["非学无以广才，非志无以成学。", "诸葛亮"],
       ["黑发不知勤学早，白首方悔读书迟。", "颜真卿"],
-      ["读书之法，在循序而渐进，熟读而精思。", "朱熹"]
+      ["三更灯火五更鸡，正是男儿读书时。", "颜真卿"],
+      ["读书之法，在循序而渐进，熟读而精思。", "朱熹"],
+      ["问渠那得清如许，为有源头活水来。", "朱熹"],
+      ["书卷多情似故人，晨昏忧乐每相亲。", "于谦"],
+      ["书犹药也，善读之可以医愚。", "刘向"],
+      ["少而好学，如日出之阳。", "刘向"],
+      ["纸上得来终觉浅，绝知此事要躬行。", "陆游"],
+      ["读书不觉已春深，一寸光阴一寸金。", "王贞白"],
+      ["三日不读书，便觉语言无味，面目可憎。", "黄庭坚"],
+      ["读书百遍，其义自见。", "董遇"],
+      ["立身以立学为先，立学以读书为本。", "欧阳修"],
+      ["业精于勤，荒于嬉。", "韩愈"],
+      ["学而不思则罔，思而不学则殆。", "孔子"],
+      ["学而时习之，不亦说乎。", "孔子"],
+      ["玉不琢，不成器；人不学，不知道。", "礼记"],
+      ["盛年不重来，一日难再晨。及时当勉励，岁月不待人。", "陶渊明"],
+      ["读万卷书，行万里路。", "刘彝"]
     ],
     en: [
       ["Some books are to be tasted, others to be swallowed, and some few to be chewed and digested.", "Francis Bacon"],
+      ["Reading maketh a full man.", "Francis Bacon"],
       ["The reading of all good books is like conversation with the finest minds of past centuries.", "René Descartes"],
-      ["I declare after all there is no enjoyment like reading.", "Jane Austen"]
+      ["I declare after all there is no enjoyment like reading.", "Jane Austen"],
+      ["A room without books is like a body without a soul.", "Cicero"],
+      ["I cannot live without books.", "Thomas Jefferson"],
+      ["Read the best books first, or you may not have a chance to read them at all.", "Henry David Thoreau"],
+      ["A good book is the precious lifeblood of a master spirit.", "John Milton"],
+      ["Leisure without books is the death and burial of a living man.", "Seneca"],
+      ["When I have a little money, I buy books; and if any is left, I buy food and clothes.", "Erasmus"],
+      ["To learn to read is to light a fire.", "Victor Hugo"],
+      ["There is no frigate like a book to take us lands away.", "Emily Dickinson"],
+      ["A house without books is like a room without windows.", "Horace Mann"],
+      ["Once you learn to read, you will be forever free.", "Frederick Douglass"],
+      ["An investment in knowledge pays the best interest.", "Benjamin Franklin"],
+      ["My library was dukedom large enough.", "William Shakespeare"],
+      ["She is too fond of books, and it has turned her brain.", "Louisa May Alcott"]
     ]
   };
+  let quotePick = { lang: "", index: -1 };
 
   function clamp(n, min, max) {
     return Math.min(max, Math.max(min, n));
@@ -1971,11 +2015,18 @@
     return rounded.toLocaleString(state.lang === "en" ? "en-US" : "zh-CN");
   }
 
-  function todayQuote() {
-    const list = QUOTES[state.lang] || QUOTES.zh;
-    const start = new Date(new Date().getFullYear(), 0, 0);
-    const day = Math.floor((Date.now() - start.getTime()) / 86400000);
-    return list[Math.abs(day) % list.length];
+  function pickQuote(fresh) {
+    const lang = state.lang === "en" ? "en" : "zh";
+    const list = QUOTES[lang];
+    if (!fresh && quotePick.lang === lang && quotePick.index >= 0 && quotePick.index < list.length) {
+      return list[quotePick.index];
+    }
+    let next = Math.floor(Math.random() * list.length);
+    if (list.length > 1 && quotePick.lang === lang) {
+      while (next === quotePick.index) next = Math.floor(Math.random() * list.length);
+    }
+    quotePick = { lang: lang, index: next };
+    return list[next];
   }
 
   function fillStats() {
@@ -1986,7 +2037,7 @@
     const pct = counted.total <= 0 ? 0 : Math.round((counted.read / counted.total) * 100);
     const mark = previousMark();
     const since = mark ? Math.max(0, counted.read - charsUpTo(mark.scroll)) : null;
-    const quote = todayQuote();
+    const quote = pickQuote(false);
     readEl.textContent = t("statChars").replace("{n}", formatCount(counted.read));
     document.getElementById("stat-unread").textContent = t("statChars").replace("{n}", formatCount(unread));
     document.getElementById("stat-since").textContent = since === null ? t("statNoMark") : t("statChars").replace("{n}", formatCount(since));
@@ -2020,6 +2071,7 @@
   }
 
   function openChangelog() {
+    closeGuide();
     renderChangelog();
     document.getElementById("changelog").classList.add("is-open");
   }
@@ -2033,6 +2085,7 @@
   }
 
   function openStats() {
+    pickQuote(true);
     fillStats();
     document.getElementById("stats").classList.add("is-open");
   }
