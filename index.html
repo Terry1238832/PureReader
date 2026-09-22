@@ -247,7 +247,7 @@
     justify-content: space-between;
     gap: 12px;
   }
-  #bookmark-add { width: auto; flex: 1; min-width: 0; }
+  #bookmark-add { width: auto; flex: none; min-width: 0; }
   #bookmark-notes {
     flex: none;
     width: auto;
@@ -258,8 +258,59 @@
     opacity: 0.72;
     white-space: nowrap;
   }
-  #bookmark-notes:hover,
-  #bookmark-notes:focus-visible { opacity: 1; }
+  .bookmark-head-start {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+    min-width: 0;
+  }
+  #bookmark-transfer {
+    flex: none;
+    padding: 8px 0;
+    font-size: 13px;
+    line-height: 1.45;
+    opacity: 0.72;
+    white-space: nowrap;
+  }
+  #bookmark-transfer:hover,
+  #bookmark-transfer:focus-visible,
+  #bookmark-transfer-menu button:hover,
+  #bookmark-transfer-menu button:focus-visible { opacity: 1; }
+  #bookmark-transfer-menu {
+    display: flex;
+    gap: 18px;
+    padding: 0 16px 4px;
+  }
+  #bookmark-transfer-menu button {
+    font-size: 13px;
+    opacity: 0.55;
+    padding: 2px 0 6px;
+  }
+  #bookmark-import-report {
+    padding: 2px 16px 8px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .import-fail,
+  .import-lead {
+    margin: 0 0 8px;
+    opacity: 0.62;
+  }
+  .import-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 0;
+  }
+  .import-row input { margin-top: 4px; flex: none; }
+  .import-choice { min-width: 0; }
+  .import-kind { display: block; opacity: 0.42; font-size: 12px; }
+  .import-line { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .import-actions { display: flex; gap: 16px; padding-top: 4px; }
+  .import-actions button { font-size: 13px; opacity: 0.62; }
+  .import-actions button:hover,
+  .import-actions button:focus-visible { opacity: 1; }
   #history.is-open,
   #bookmarks.is-open,
   #notes.is-open {
@@ -1183,12 +1234,12 @@
         <li><span>Esc</span><span data-i18n="keyEsc">关闭说明，或隐藏控制栏</span></li>
       </ul>
       <p data-i18n="guideMouse">双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。</p>
-      <p data-i18n="guideChrome">鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。</p>
+      <p data-i18n="guideChrome">鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。书签旁点「读书笔记」之后，它不再是书签，会归到读书笔记里。添加旁边可以导入、导出这一本的书签和读书笔记。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。</p>
       <h2 data-i18n="filesH">文件</h2>
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.6.1</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.7</span></button></p>
     </div>
   </div>
 
@@ -1292,9 +1343,17 @@
   <div id="bookmarks">
     <div id="bookmark-panel">
       <div class="bookmark-head">
-        <button type="button" id="bookmark-add" data-i18n="bookmarkAdd">添加</button>
+        <div class="bookmark-head-start">
+          <button type="button" id="bookmark-add" data-i18n="bookmarkAdd">添加</button>
+          <button type="button" id="bookmark-transfer" data-i18n="bookmarkTransfer">导入导出</button>
+        </div>
         <button type="button" id="bookmark-notes" data-i18n="notes">读书笔记</button>
       </div>
+      <div id="bookmark-transfer-menu" hidden>
+        <button type="button" id="bookmark-export" data-i18n="bookmarkExport">导出</button>
+        <button type="button" id="bookmark-import" data-i18n="bookmarkImport">导入</button>
+      </div>
+      <div id="bookmark-import-report" hidden></div>
       <div id="bookmark-list"></div>
     </div>
   </div>
@@ -1322,6 +1381,7 @@
   </div>
 
   <input id="file" type="file" accept=".pdf,.txt,text/plain,application/pdf" hidden>
+  <input id="bookmark-file" type="file" accept="application/json,.json" hidden>
 
 <script>
 (function () {
@@ -1342,8 +1402,19 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "1.6.1";
+  const VERSION = "1.7";
   const CHANGELOG = [
+    {
+      version: "1.7",
+      zh: [
+        "书签窗口可以导入、导出书签和读书笔记。",
+        "书对不上会写明失败原因。重复的会列出来，由你决定导入哪几条。"
+      ],
+      en: [
+        "Bookmarks can import and export marks and notes.",
+        "A file from another book says why it failed. Matches are listed so you can choose which to bring in."
+      ]
+    },
     {
       version: "1.6.1",
       zh: [
@@ -1558,6 +1629,8 @@
   let noteFocusId = "";
   let noteHintId = "";
   let noteFolder = "all";
+  let importPending = null;
+  let importMessage = null;
 
   const QUOTES = {
     zh: [
@@ -1751,7 +1824,7 @@
       keyF: "全屏",
       keyEsc: "关闭说明，或隐藏控制栏",
       guideMouse: "双击正文，同样是暂停或继续。滚轮滚动时，自动滚动会先让开一会儿。",
-      guideChrome: "鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。书签旁点「读书笔记」之后，它不再是书签，会归到读书笔记里。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。",
+      guideChrome: "鼠标移到页面最上方，可以改速度、字号、字体和宽度，也可以全屏，或给这一本加书签。书签默认用日期和时间命名，名称可以改。书签旁点「读书笔记」之后，它不再是书签，会归到读书笔记里。添加旁边可以导入、导出这一本的书签和读书笔记。用 Chrome 打开时，地址栏右侧可以安装。右下角很淡的数字是现在读到哪里，点开可以看到读了多少字。",
       filesH: "文件",
       guideFiles: "文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。",
       guidePdf: "整理 PDF 时会从网络加载解析组件。TXT 不需要网络。",
@@ -1763,6 +1836,22 @@
       historyEmpty: "还没有打开过",
       bookmarks: "书签",
       bookmarkAdd: "添加",
+      bookmarkTransfer: "导入导出",
+      bookmarkExport: "导出",
+      bookmarkImport: "导入",
+      importBadFile: "读不了这个文件。",
+      importNotMarks: "这不是书签文件。",
+      importNoBook: "这份文件没有写是哪一本书。",
+      importWrongBook: "这份书签属于「{book}」，不是当前这本「{current}」。",
+      importNone: "没有新的书签或读书笔记。",
+      importConflictLead: "这些和现有的重复了。勾选要导入的。没有重复的会一并导入。",
+      importHave: "现有",
+      importNew: "导入",
+      importApply: "导入所选",
+      importCancel: "取消",
+      importNoOpen: "还没有打开一本书。",
+      importKindMark: "书签",
+      importKindNote: "读书笔记",
       bookmarkEmpty: "这一本还没有书签",
       bookmarkRename: "改名",
       bookmarkRemove: "删除",
@@ -1842,7 +1931,7 @@
       keyF: "Full screen",
       keyEsc: "Close the guide, or hide the controls",
       guideMouse: "Double-click the text to pause or continue. The wheel lets auto-scroll step aside for a moment.",
-      guideChrome: "Move the pointer to the top to change speed, size, typeface, and width, to go full screen, or to bookmark this text. A new bookmark is named with the date and time, and the name can be changed. Choosing Notes beside a bookmark moves it into the notes. In Chrome, an install icon appears at the right of the address bar. The faint number at the lower right is how far you have read. Click it to see how many words.",
+      guideChrome: "Move the pointer to the top to change speed, size, typeface, and width, to go full screen, or to bookmark this text. A new bookmark is named with the date and time, and the name can be changed. Choosing Notes beside a bookmark moves it into the notes. Beside Add, this book's marks and notes can be imported or exported. In Chrome, an install icon appears at the right of the address bar. The faint number at the lower right is how far you have read. Click it to see how many words.",
       filesH: "Files",
       guideFiles: "The text stays in this browser and is not uploaded. Recently opened files can be opened again. Speed, size, typeface, width, and reading position are remembered.",
       guidePdf: "Reading a PDF loads a parser from the network. TXT does not.",
@@ -1854,6 +1943,22 @@
       historyEmpty: "Nothing opened yet",
       bookmarks: "Bookmarks",
       bookmarkAdd: "Add",
+      bookmarkTransfer: "Import / Export",
+      bookmarkExport: "Export",
+      bookmarkImport: "Import",
+      importBadFile: "This file can't be read.",
+      importNotMarks: "This is not a bookmark file.",
+      importNoBook: "This file does not say which book it belongs to.",
+      importWrongBook: "These marks belong to “{book}”, not the open book “{current}”.",
+      importNone: "Nothing new to import.",
+      importConflictLead: "These match ones you already have. Check the ones to import. New ones come in with them.",
+      importHave: "Current",
+      importNew: "Import",
+      importApply: "Import selected",
+      importCancel: "Cancel",
+      importNoOpen: "No book is open.",
+      importKindMark: "Bookmark",
+      importKindNote: "Note",
       bookmarkEmpty: "No bookmarks in this text yet",
       bookmarkRename: "Rename",
       bookmarkRemove: "Remove",
@@ -1943,6 +2048,13 @@
     updateFullscreenButton();
     renderHistory();
     renderBookmarks();
+    if (importPending) {
+      const checked = {};
+      document.querySelectorAll("#bookmark-import-report input[type=checkbox]").forEach(function (box) {
+        if (box.checked) checked[box.value] = true;
+      });
+      renderImportReport(checked);
+    } else if (importMessage) paintImportMessage();
     if (notesOpen()) renderNotes();
     applyTheme();
     fillStats();
@@ -3253,6 +3365,10 @@
   function openBookmarkPanel() {
     closeHistory();
     closeNotes();
+    importPending = null;
+    clearImportReport();
+    const menu = document.getElementById("bookmark-transfer-menu");
+    if (menu) menu.hidden = true;
     renderBookmarks();
     document.getElementById("bookmarks").classList.add("is-open");
     revealChrome();
@@ -3379,6 +3495,366 @@
       row.append(go, edit, noteBtn, remove);
       list.appendChild(row);
     });
+  }
+
+  function clearImportReport() {
+    importMessage = null;
+    const report = document.getElementById("bookmark-import-report");
+    if (!report) return;
+    report.replaceChildren();
+    report.hidden = true;
+  }
+
+  function paintImportMessage() {
+    const report = document.getElementById("bookmark-import-report");
+    if (!report || !importMessage) return;
+    report.replaceChildren();
+    const p = document.createElement("p");
+    p.className = "import-fail";
+    p.textContent = importMessage.map ? fillText(t(importMessage.key), importMessage.map) : t(importMessage.key);
+    report.appendChild(p);
+    report.hidden = false;
+  }
+
+  function showImportFail(key, map) {
+    importPending = null;
+    importMessage = { key: key, map: map || null };
+    paintImportMessage();
+  }
+
+  function fillText(text, map) {
+    Object.keys(map).forEach(function (name) {
+      text = text.split("{" + name + "}").join(map[name]);
+    });
+    return text;
+  }
+
+  function numOrNull(value) {
+    return typeof value === "number" && isFinite(value) ? value : null;
+  }
+
+  function cleanMark(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    if (typeof raw.id !== "string" && typeof raw.id !== "number") return null;
+    const id = String(raw.id);
+    if (!id) return null;
+    return {
+      id: id,
+      name: typeof raw.name === "string" ? raw.name : "",
+      scroll: Number(raw.scroll) || 0,
+      paragraph: numOrNull(raw.paragraph),
+      at: Number(raw.at) || 0
+    };
+  }
+
+  function cleanNote(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    if (typeof raw.id !== "string" && typeof raw.id !== "number") return null;
+    const id = String(raw.id);
+    if (!id) return null;
+    return {
+      id: id,
+      name: typeof raw.name === "string" ? raw.name : "",
+      scroll: Number(raw.scroll) || 0,
+      paragraph: numOrNull(raw.paragraph),
+      at: Number(raw.at) || 0,
+      folderId: typeof raw.folderId === "string" ? raw.folderId : "",
+      body: typeof raw.body === "string" ? raw.body : "",
+      color: NOTE_COLORS.indexOf(raw.color) >= 0 ? raw.color : "sand",
+      quote: typeof raw.quote === "string" ? raw.quote : "",
+      startParagraph: numOrNull(raw.startParagraph),
+      startOffset: Number(raw.startOffset) || 0,
+      endParagraph: numOrNull(raw.endParagraph),
+      endOffset: Number(raw.endOffset) || 0
+    };
+  }
+
+  function cleanFolder(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    if (typeof raw.id !== "string" && typeof raw.id !== "number") return null;
+    if (typeof raw.name !== "string") return null;
+    const id = String(raw.id);
+    if (!id) return null;
+    return {
+      id: id,
+      name: raw.name,
+      parentId: typeof raw.parentId === "string" ? raw.parentId : ""
+    };
+  }
+
+  function uniqueById(list) {
+    const seen = {};
+    const out = [];
+    list.forEach(function (item) {
+      if (!item || seen[item.id]) return;
+      seen[item.id] = true;
+      out.push(item);
+    });
+    return out;
+  }
+
+  function indexById(list, id) {
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].id === id) return i;
+    }
+    return -1;
+  }
+
+  function sameMark(a, b) {
+    return a.id === b.id && (a.name || "") === (b.name || "") && a.paragraph === b.paragraph && (Number(a.scroll) || 0) === (Number(b.scroll) || 0);
+  }
+
+  function sameNote(a, b) {
+    return sameMark(a, b)
+      && (a.folderId || "") === (b.folderId || "")
+      && (a.body || "") === (b.body || "")
+      && (a.quote || "") === (b.quote || "")
+      && a.color === b.color
+      && a.startParagraph === b.startParagraph
+      && a.endParagraph === b.endParagraph
+      && (Number(a.startOffset) || 0) === (Number(b.startOffset) || 0)
+      && (Number(a.endOffset) || 0) === (Number(b.endOffset) || 0);
+  }
+
+  function findClash(list, item) {
+    const name = (item.name || "").trim();
+    let byName = null;
+    let byPlace = null;
+    for (let i = 0; i < list.length; i++) {
+      const have = list[i];
+      if (have.id === item.id) return have;
+      const haveName = (have.name || "").trim();
+      if (!byName && name && haveName === name) byName = have;
+      if (!byPlace && typeof item.paragraph === "number" && item.paragraph === have.paragraph) byPlace = have;
+    }
+    return byName || byPlace || null;
+  }
+
+  function alreadyThere(list, item, same) {
+    for (let i = 0; i < list.length; i++) {
+      if (same(list[i], item)) return true;
+    }
+    return false;
+  }
+
+  function placeText(item) {
+    if (typeof item.paragraph !== "number") return "";
+    const n = item.paragraph + 1;
+    return state.lang === "zh" ? "第 " + n + " 段" : "Paragraph " + n;
+  }
+
+  function importLine(label, item) {
+    const place = placeText(item);
+    return label + "　" + (item.name || "") + (place ? "　" + place : "");
+  }
+
+  function exportName(book) {
+    const base = String(book || "bookmarks").replace(/[\\/:*?"<>|]/g, "").trim() || "bookmarks";
+    return base + ".purereader.json";
+  }
+
+  function exportPack() {
+    const entry = fileEntry(state.fileName);
+    return {
+      purereader: 1,
+      book: state.fileName,
+      marks: entry.marks.map(cleanMark).filter(Boolean),
+      notes: entry.notes.map(cleanNote).filter(Boolean),
+      folders: entry.folders.map(cleanFolder).filter(Boolean)
+    };
+  }
+
+  function downloadJson(name, data) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function exportBookmarks() {
+    const menu = document.getElementById("bookmark-transfer-menu");
+    if (menu) menu.hidden = true;
+    if (!state.fileName || state.mode !== "reading") {
+      showImportFail("importNoOpen");
+      return;
+    }
+    downloadJson(exportName(state.fileName), exportPack());
+  }
+
+  function renderImportReport(checked) {
+    importMessage = null;
+    const report = document.getElementById("bookmark-import-report");
+    const pending = importPending;
+    report.replaceChildren();
+    if (!pending || !pending.clashes.length) {
+      report.hidden = true;
+      return;
+    }
+    const lead = document.createElement("p");
+    lead.className = "import-lead";
+    lead.textContent = t("importConflictLead");
+    report.appendChild(lead);
+    pending.clashes.forEach(function (clash) {
+      const row = document.createElement("label");
+      row.className = "import-row";
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      const key = clash.kind + ":" + clash.item.id;
+      box.value = key;
+      box.checked = !!checked[key];
+      const choice = document.createElement("span");
+      choice.className = "import-choice";
+      const kind = document.createElement("span");
+      kind.className = "import-kind";
+      kind.textContent = clash.kind === "note" ? t("importKindNote") : t("importKindMark");
+      const have = document.createElement("span");
+      have.className = "import-line";
+      have.textContent = importLine(t("importHave"), clash.have);
+      const incoming = document.createElement("span");
+      incoming.className = "import-line";
+      incoming.textContent = importLine(t("importNew"), clash.item);
+      choice.append(kind, have, incoming);
+      row.append(box, choice);
+      report.appendChild(row);
+    });
+    const actions = document.createElement("div");
+    actions.className = "import-actions";
+    const apply = document.createElement("button");
+    apply.type = "button";
+    apply.textContent = t("importApply");
+    apply.addEventListener("click", function () {
+      const selected = {};
+      report.querySelectorAll("input[type=checkbox]").forEach(function (box) {
+        if (box.checked) selected[box.value] = true;
+      });
+      applyImport(selected);
+    });
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.textContent = t("importCancel");
+    cancel.addEventListener("click", function () {
+      importPending = null;
+      clearImportReport();
+    });
+    actions.append(apply, cancel);
+    report.appendChild(actions);
+    report.hidden = false;
+  }
+
+  function applyImport(selected) {
+    const pending = importPending;
+    if (!pending || !state.fileName) return;
+    const entry = fileEntry(state.fileName);
+    const marks = pending.freshMarks.slice();
+    const notes = pending.freshNotes.slice();
+    pending.clashes.forEach(function (clash) {
+      if (!selected[clash.kind + ":" + clash.item.id]) return;
+      if (clash.kind === "mark") marks.push(clash.item);
+      else notes.push(clash.item);
+    });
+    importPending = null;
+    if (!marks.length && !notes.length) {
+      showImportFail("importNone");
+      return;
+    }
+    const folderIds = {};
+    notes.forEach(function (note) {
+      if (note.folderId) folderIds[note.folderId] = true;
+    });
+    let grew = true;
+    let guard = 0;
+    while (grew && guard < 12) {
+      grew = false;
+      guard += 1;
+      pending.folders.forEach(function (folder) {
+        if (!folderIds[folder.id] || !folder.parentId || folderIds[folder.parentId]) return;
+        if (pending.folders.some(function (item) { return item.id === folder.parentId; })) {
+          folderIds[folder.parentId] = true;
+          grew = true;
+        }
+      });
+    }
+    pending.folders.forEach(function (folder) {
+      if (!folderIds[folder.id]) return;
+      if (indexById(entry.folders, folder.id) >= 0) return;
+      const parentKnown = !folder.parentId || folderIds[folder.parentId] || indexById(entry.folders, folder.parentId) >= 0;
+      entry.folders.push({
+        id: folder.id,
+        name: folder.name,
+        parentId: parentKnown ? folder.parentId : ""
+      });
+    });
+    marks.forEach(function (item) {
+      const index = indexById(entry.marks, item.id);
+      if (index >= 0) entry.marks[index] = item;
+      else entry.marks.unshift(item);
+    });
+    notes.forEach(function (item) {
+      const index = indexById(entry.notes, item.id);
+      if (index >= 0) entry.notes[index] = item;
+      else entry.notes.unshift(item);
+    });
+    if (entry.marks.length > 100) entry.marks.length = 100;
+    persist();
+    clearImportReport();
+    renderBookmarks();
+    if (notes.length) relayoutNotes();
+    if (notesOpen()) renderNotes();
+  }
+
+  function receiveImport(text) {
+    if (!state.fileName || state.mode !== "reading") {
+      showImportFail("importNoOpen");
+      return;
+    }
+    let data;
+    try { data = JSON.parse(text); } catch (err) {
+      showImportFail("importBadFile");
+      return;
+    }
+    if (!data || data.purereader !== 1 || !Array.isArray(data.marks) || !Array.isArray(data.notes)) {
+      showImportFail("importNotMarks");
+      return;
+    }
+    if (typeof data.book !== "string" || !data.book.trim()) {
+      showImportFail("importNoBook");
+      return;
+    }
+    if (data.book.trim() !== state.fileName) {
+      showImportFail("importWrongBook", { book: data.book.trim(), current: state.fileName });
+      return;
+    }
+    const marks = uniqueById(data.marks.map(cleanMark).filter(Boolean));
+    const notes = uniqueById(data.notes.map(cleanNote).filter(Boolean));
+    const folders = uniqueById((Array.isArray(data.folders) ? data.folders : []).map(cleanFolder).filter(Boolean));
+    const entry = fileEntry(state.fileName);
+    const freshMarks = [];
+    const freshNotes = [];
+    const clashes = [];
+    marks.forEach(function (item) {
+      if (alreadyThere(entry.marks, item, sameMark)) return;
+      const have = findClash(entry.marks, item);
+      if (have) clashes.push({ kind: "mark", have: have, item: item });
+      else freshMarks.push(item);
+    });
+    notes.forEach(function (item) {
+      if (alreadyThere(entry.notes, item, sameNote)) return;
+      const have = findClash(entry.notes, item);
+      if (have) clashes.push({ kind: "note", have: have, item: item });
+      else freshNotes.push(item);
+    });
+    if (!freshMarks.length && !freshNotes.length && !clashes.length) {
+      showImportFail("importNone");
+      return;
+    }
+    importPending = { freshMarks: freshMarks, freshNotes: freshNotes, clashes: clashes, folders: folders };
+    if (!clashes.length) applyImport({});
+    else renderImportReport({});
   }
 
   function notesOpen() {
@@ -4198,6 +4674,24 @@
     });
     document.getElementById("btn-theme").addEventListener("click", toggleTheme);
     document.getElementById("bookmark-add").addEventListener("click", addBookmark);
+    document.getElementById("bookmark-transfer").addEventListener("click", function () {
+      const menu = document.getElementById("bookmark-transfer-menu");
+      menu.hidden = !menu.hidden;
+    });
+    document.getElementById("bookmark-export").addEventListener("click", exportBookmarks);
+    document.getElementById("bookmark-import").addEventListener("click", function () {
+      document.getElementById("bookmark-transfer-menu").hidden = true;
+      document.getElementById("bookmark-file").click();
+    });
+    document.getElementById("bookmark-file").addEventListener("change", function (e) {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = "";
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function () { receiveImport(String(reader.result || "")); };
+      reader.onerror = function () { showImportFail("importBadFile"); };
+      reader.readAsText(file);
+    });
     document.getElementById("notes-close").addEventListener("click", closeNotes);
     document.getElementById("notes-add-folder").addEventListener("click", addFolder);
     document.getElementById("notes-search").addEventListener("input", function (e) {
