@@ -88,6 +88,13 @@
     justify-content: center;
     padding-bottom: 10vh;
     text-align: center;
+    transition: opacity 0.8s ease;
+  }
+  #status-text { transition: opacity 0.22s ease; }
+  #status.is-dismissing #status-text { opacity: 0; }
+  #status.is-leaving {
+    opacity: 0;
+    pointer-events: none;
   }
 
   #landing-open {
@@ -485,6 +492,12 @@
     font-size: var(--font);
     line-height: var(--leading);
     font-family: var(--reading-font);
+    clip-path: inset(0 0 0 0);
+    transition: opacity 1s ease, clip-path 1.05s ease;
+  }
+  body.is-opening #reader {
+    opacity: 0;
+    clip-path: inset(40% 0 40% 0);
   }
 
   #reader p {
@@ -737,7 +750,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    #chrome, #guide, #changelog, #history, #bookmarks, #stats { transition: none; }
+    #chrome, #guide, #changelog, #history, #bookmarks, #stats, #status, #reader { transition: none; }
   }
 </style>
 </head>
@@ -784,7 +797,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.1</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">1.2</span></button></p>
     </div>
   </div>
 
@@ -907,8 +920,13 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "1.1";
+  const VERSION = "1.2";
   const CHANGELOG = [
+    {
+      version: "1.2",
+      zh: ["整理完成之后，正文从中间缓缓打开。"],
+      en: ["When the text is ready, the page opens from the center."]
+    },
     {
       version: "1.1",
       zh: [
@@ -1002,6 +1020,7 @@
   let selecting = false;
   let pdfjsPromise = null;
   let openJob = 0;
+  let revealToken = 0;
   let historyItems = [];
   let charLens = [];
 
@@ -1307,6 +1326,7 @@
   function setStatus(message, withAction) {
     statusText.textContent = message;
     statusAction.hidden = !withAction;
+    statusEl.classList.remove("is-leaving", "is-dismissing");
     statusEl.hidden = false;
     landing.hidden = true;
   }
@@ -1315,7 +1335,9 @@
     state.mode = "landing";
     state.playing = false;
     state.anim = null;
-    document.body.classList.remove("is-reading", "cursor-hidden");
+    revealToken += 1;
+    document.body.classList.remove("is-reading", "is-opening", "cursor-hidden");
+    statusEl.classList.remove("is-leaving", "is-dismissing");
     document.title = t("appTitle");
     landing.hidden = false;
     statusEl.hidden = true;
@@ -2179,18 +2201,41 @@
     });
   }
 
+  function playOpening() {
+    const token = ++revealToken;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      document.body.classList.remove("is-opening");
+      statusEl.hidden = true;
+      statusEl.classList.remove("is-leaving", "is-dismissing");
+      state.resumeAt = 0;
+      return;
+    }
+    state.resumeAt = performance.now() + 1180;
+    statusEl.classList.add("is-dismissing");
+    window.setTimeout(function () {
+      if (token !== revealToken) return;
+      document.body.classList.remove("is-opening");
+      statusEl.classList.add("is-leaving");
+    }, 220);
+    window.setTimeout(function () {
+      if (token !== revealToken) return;
+      statusEl.hidden = true;
+      statusEl.classList.remove("is-leaving", "is-dismissing");
+    }, 1200);
+  }
+
   function enterReading(paragraphs) {
     renderParagraphs(paragraphs);
     state.mode = "reading";
     state.playing = true;
     state.anim = null;
     state.resumeAt = 0;
-    document.body.classList.add("is-reading");
+    document.body.classList.add("is-reading", "is-opening");
     document.title = state.fileName || t("appTitle");
     docName.textContent = state.fileName;
     updatePlayButton();
     landing.hidden = true;
-    statusEl.hidden = true;
     scroller.hidden = false;
     focusLine.hidden = false;
     progressEl.hidden = false;
@@ -2203,6 +2248,7 @@
     measure();
     applyFocus();
     updateProgress();
+    playOpening();
     startLoop();
     armCursor();
     if (document.fonts && document.fonts.ready) {
@@ -2370,7 +2416,9 @@
     closeBookmarks();
     state.fileName = name || t("untitled");
     state.mode = "processing";
-    document.body.classList.remove("is-reading", "cursor-hidden");
+    revealToken += 1;
+    document.body.classList.remove("is-reading", "is-opening", "cursor-hidden");
+    statusEl.classList.remove("is-leaving", "is-dismissing");
     landing.hidden = true;
     scroller.hidden = true;
     focusLine.hidden = true;
