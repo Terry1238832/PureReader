@@ -1381,7 +1381,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 和 EPUB 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.1.1</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.1.2</span></button></p>
     </div>
   </div>
 
@@ -1561,8 +1561,13 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "2.1.1";
+  const VERSION = "2.1.2";
   const CHANGELOG = [
+    {
+      version: "2.1.2",
+      zh: ["速度很慢时，文字上移不再一顿一顿。"],
+      en: ["At a very slow speed, the words move upward without a slight stutter."]
+    },
     {
       version: "2.1.1",
       zh: [
@@ -1849,6 +1854,7 @@
   let revealToken = 0;
   let opening = null;
   let loadBar = null;
+  let scrollFrac = 0;
   let historyItems = [];
   let charLens = [];
   let paragraphTexts = [];
@@ -2439,6 +2445,7 @@
     state.anim = null;
     revealToken += 1;
     opening = null;
+    scrollFrac = 0;
     reader.style.transform = "";
     focusLine.style.opacity = "";
     progressEl.style.opacity = "";
@@ -3487,9 +3494,10 @@
   function applyFocus() {
     if (!metrics.length || state.mode !== "reading") return;
     const vh = scroller.clientHeight || window.innerHeight;
-    const center = scroller.scrollTop + vh / 2;
-    const from = scroller.scrollTop - vh * 0.15;
-    const to = scroller.scrollTop + vh * 1.15;
+    const y = scroller.scrollTop + scrollFrac;
+    const center = y + vh / 2;
+    const from = y - vh * 0.15;
+    const to = y + vh * 1.15;
     const blend = openingBlend(performance.now());
 
     let lo = 0;
@@ -3661,6 +3669,29 @@
     return Math.max(0, scroller.scrollHeight - scroller.clientHeight);
   }
 
+  /* scrollTop 会收成整像素。慢速时把剩下的小数交给位移，避免一顿一顿。 */
+  function paintScroll(y) {
+    const max = maxScroll();
+    const pos = Math.min(max, Math.max(0, y));
+    scroller.scrollTop = pos;
+    let frac = pos - scroller.scrollTop;
+    if (frac > 1 || frac < -1) frac = 0;
+    scrollFrac = frac;
+    state.scrollPos = Math.abs(frac) > 0.0005 ? pos : scroller.scrollTop;
+    if (opening) return;
+    const next = Math.abs(scrollFrac) > 0.0005 ? "translateY(" + (-scrollFrac).toFixed(3) + "px)" : "";
+    if (reader.style.transform !== next) reader.style.transform = next;
+  }
+
+  function settleScroll() {
+    if (Math.abs(scrollFrac) > 0.0005) {
+      scroller.scrollTop = scroller.scrollTop + scrollFrac;
+      scrollFrac = 0;
+      if (!opening) reader.style.transform = "";
+    }
+    state.scrollPos = scroller.scrollTop;
+  }
+
   function tick(ts) {
     if (state.mode !== "reading") {
       state.loopOn = false;
@@ -3675,18 +3706,16 @@
       const t = clamp((ts - anim.t0) / anim.duration, 0, 1);
       const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
       const y = anim.start + (anim.target - anim.start) * eased;
-      scroller.scrollTop = y;
-      state.scrollPos = y;
+      paintScroll(y);
       if (t >= 1) {
         state.anim = null;
         state.resumeAt = performance.now() + 900;
       }
     } else if (state.playing && performance.now() >= state.resumeAt && !selectionNoteOn() && !chapterEndOn()) {
       const max = maxScroll();
-      state.scrollPos = Math.min(max, state.scrollPos + state.speed * dt);
-      scroller.scrollTop = state.scrollPos;
+      paintScroll(Math.min(max, state.scrollPos + state.speed * dt));
     } else {
-      state.scrollPos = scroller.scrollTop;
+      settleScroll();
     }
 
     applyFocus();
@@ -3716,7 +3745,7 @@
 
   function animateToScroll(target) {
     const y = clamp(target, 0, maxScroll());
-    const start = scroller.scrollTop;
+    const start = scroller.scrollTop + scrollFrac;
     const duration = Math.min(780, Math.max(320, Math.abs(y - start) * 0.38));
     state.anim = { start: start, target: y, t0: performance.now(), duration: duration };
   }
@@ -4052,6 +4081,7 @@
     state.mode = "processing";
     revealToken += 1;
     opening = null;
+    scrollFrac = 0;
     reader.style.transform = "";
     focusLine.style.opacity = "";
     progressEl.style.opacity = "";
@@ -4126,6 +4156,7 @@
   function onUserIntent() {
     if (state.mode !== "reading") return;
     state.anim = null;
+    settleScroll();
     state.resumeAt = performance.now() + WHEEL_PAUSE;
   }
 
