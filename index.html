@@ -1397,7 +1397,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 和 EPUB 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.1.3</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.1.4</span></button></p>
     </div>
   </div>
 
@@ -1587,8 +1587,19 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "2.1.3";
+  const VERSION = "2.1.4";
   const CHANGELOG = [
+    {
+      version: "2.1.4",
+      zh: [
+        "点过说明、打开、历史、书签、章节、暂停、字号、全屏、深色和语言之后，再按空格不会留下焦点框。",
+        "全屏或改宽度时，正在读的那一行留在原地。"
+      ],
+      en: [
+        "After the info mark, Open, History, Bookmarks, Chapters, play, type size, full screen, theme, or language, Space no longer leaves a focus box.",
+        "Full screen and the width control keep the current line where it is."
+      ]
+    },
     {
       version: "2.1.3",
       zh: ["点赞和点踩改成图标。"],
@@ -1886,6 +1897,7 @@
   let opening = null;
   let loadBar = null;
   let scrollFrac = 0;
+  let viewportH = 0;
   let historyItems = [];
   let charLens = [];
   let paragraphTexts = [];
@@ -3782,11 +3794,38 @@
   }
 
   function afterLayoutChange() {
+    const anchor = readingAnchor();
     requestAnimationFrame(function () {
+      if (state.mode !== "reading") return;
       measure();
+      placeAnchor(anchor);
       applyFocus();
       updateProgress();
     });
+  }
+
+  function readingAnchor() {
+    if (!metrics.length || state.mode !== "reading") return null;
+    const center = scroller.scrollTop + scrollFrac + (viewportH || scroller.clientHeight || window.innerHeight) / 2;
+    let index = 0;
+    for (let i = 0; i < metrics.length; i++) {
+      const m = metrics[i];
+      if (center < m.top) break;
+      index = i;
+      if (center < m.top + m.height) break;
+    }
+    const m = metrics[index];
+    return { index: index, ratio: (center - m.top) / Math.max(1, m.height) };
+  }
+
+  function placeAnchor(anchor) {
+    if (!anchor || !metrics[anchor.index]) return;
+    const m = metrics[anchor.index];
+    const vh = scroller.clientHeight || window.innerHeight;
+    const center = m.top + m.height * anchor.ratio;
+    state.anim = null;
+    paintScroll(clamp(center - vh / 2, 0, maxScroll()));
+    viewportH = vh;
   }
 
   function playOpening() {
@@ -3924,6 +3963,7 @@
     scroller.scrollTop = saved && typeof saved.scroll === "number" ? saved.scroll : 0;
     state.scrollPos = scroller.scrollTop;
     measure();
+    viewportH = scroller.clientHeight || window.innerHeight;
     playOpening();
     applyFocus();
     updateProgress();
@@ -5906,6 +5946,11 @@
     if (el && el !== document.body && typeof el.blur === "function") el.blur();
   }
 
+  function forgetPointerFocus(el) {
+    if (!el) return;
+    el.addEventListener("pointerup", function () { el.blur(); });
+  }
+
   function onKey(e) {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (chaptersOpen()) {
@@ -5981,7 +6026,10 @@
       return;
     }
     const inChrome = document.activeElement && chrome.contains(document.activeElement);
-    if (inChrome && e.code !== "Escape" && e.code !== "KeyO" && e.code !== "KeyF") return;
+    if (inChrome && e.code === "Space") {
+      e.preventDefault();
+      releaseFocus();
+    } else if (inChrome && e.code !== "Escape" && e.code !== "KeyO" && e.code !== "KeyF") return;
 
     if (e.code === "KeyO") {
       e.preventDefault();
@@ -6005,6 +6053,7 @@
 
     if (e.code === "Space") {
       e.preventDefault();
+      releaseFocus();
       if (e.repeat) return;
       togglePlay();
       return;
@@ -6211,6 +6260,20 @@
     });
 
     window.addEventListener("keydown", onKey);
+    [
+      "guide-link",
+      "btn-open",
+      "btn-history",
+      "btn-bookmarks",
+      "btn-chapters",
+      "btn-play",
+      "font-dec",
+      "font-inc",
+      "btn-full",
+      "btn-theme",
+      "btn-lang",
+      "landing-lang"
+    ].forEach(function (id) { forgetPointerFocus(document.getElementById(id)); });
     window.addEventListener("mousemove", function (e) {
       armCursor();
       if (state.mode !== "reading") return;
