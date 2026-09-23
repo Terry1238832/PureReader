@@ -1397,7 +1397,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 和 EPUB 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.1.4</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.1.5</span></button></p>
     </div>
   </div>
 
@@ -1587,8 +1587,13 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "2.1.4";
+  const VERSION = "2.1.5";
   const CHANGELOG = [
+    {
+      version: "2.1.5",
+      zh: ["说明、历史、书签或章节开着的时候，空格仍然可以暂停或继续。"],
+      en: ["Space still pauses or continues while the guide, history, bookmarks, or chapters are open."]
+    },
     {
       version: "2.1.4",
       zh: [
@@ -5951,8 +5956,21 @@
     el.addEventListener("pointerup", function () { el.blur(); });
   }
 
+  function typingInField() {
+    const el = document.activeElement;
+    if (!el || !el.tagName) return false;
+    const tag = el.tagName;
+    return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
+  }
+
   function onKey(e) {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.code === "Space" && state.mode === "reading" && !typingInField()) {
+      e.preventDefault();
+      releaseFocus();
+      if (!e.repeat) togglePlay();
+      return;
+    }
     if (chaptersOpen()) {
       if (e.code === "Escape") {
         e.preventDefault();
@@ -5968,11 +5986,6 @@
         e.preventDefault();
         closeNotes();
         releaseFocus();
-        return;
-      }
-      if (e.code === "Space" && state.mode === "reading") {
-        e.preventDefault();
-        if (!e.repeat) togglePlay();
       }
       return;
     }
@@ -5991,12 +6004,6 @@
         e.preventDefault();
         closeStats();
         releaseFocus();
-        return;
-      }
-      if (e.code === "Space" && state.mode === "reading") {
-        e.preventDefault();
-        if (!e.repeat) togglePlay();
-        return;
       }
       return;
     }
@@ -6051,13 +6058,6 @@
       return;
     }
 
-    if (e.code === "Space") {
-      e.preventDefault();
-      releaseFocus();
-      if (e.repeat) return;
-      togglePlay();
-      return;
-    }
     if (e.code === "ArrowUp" || e.code === "ArrowDown") {
       e.preventDefault();
       if (state.anim) return;
