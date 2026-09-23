@@ -162,6 +162,27 @@
 
   #status-action { margin-top: 18px; }
 
+  #load-bar {
+    width: 10em;
+    height: 2px;
+    margin-top: 20px;
+    border-radius: 1px;
+    background: color-mix(in srgb, var(--fg) 22%, transparent);
+    overflow: hidden;
+    transition: opacity 0.22s ease;
+  }
+  #load-bar-fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--fg);
+    opacity: 0.82;
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+  #status.is-dismissing #load-bar { opacity: 0; }
+
   #landing-history {
     display: flex;
     flex-direction: column;
@@ -1271,7 +1292,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     :root { transition: none; }
-    #chrome, #guide, #changelog, #history, #bookmarks, #chapters, #notes, #stats, #status { transition: none; }
+    #chrome, #guide, #changelog, #history, #bookmarks, #chapters, #notes, #stats, #status, #load-bar { transition: none; }
   }
 </style>
 </head>
@@ -1306,7 +1327,7 @@
       <p data-i18n="guideLead">把一篇文字放进来。页眉、页脚和单独一行的页码会被拿掉，只留下可以长时间读的正文。</p>
       <p data-i18n="guideFocus">文字自己缓慢上移。眼睛停在屏幕中央，靠近上下边缘的句子会慢慢变淡。</p>
       <h2 data-i18n="guideOpenH">打开</h2>
-      <p data-i18n="guideOpen">拖入 PDF、TXT 或 EPUB，或点击页面选择。按 O 也可以。最近读过的会出现在首页，也可以从顶部的历史里再打开。EPUB 打开后，左边可以选择章节。</p>
+      <p data-i18n="guideOpen">拖入 PDF、TXT 或 EPUB，或点击页面选择。按 O 也可以。整理时下面有一条线，再快也会慢慢走完。最近读过的会出现在首页，也可以从顶部的历史里再打开。EPUB 打开后，左边可以选择章节。</p>
       <h2 data-i18n="keysH">键盘</h2>
       <ul>
         <li><span>空格</span><span data-i18n="keySpace">暂停或继续</span></li>
@@ -1324,7 +1345,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 和 EPUB 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.0.1</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.1</span></button></p>
     </div>
   </div>
 
@@ -1338,6 +1359,7 @@
 
   <div id="status" hidden role="status" aria-live="polite">
     <p id="status-text" data-i18n="preparing">正在整理文字…</p>
+    <div id="load-bar" hidden role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-i18n-aria="loadProgress" aria-label="整理进度"><span id="load-bar-fill"></span></div>
     <button type="button" id="status-action" data-i18n="retry" hidden>重新选择</button>
   </div>
 
@@ -1503,8 +1525,17 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "2.0.1";
+  const VERSION = "2.1";
   const CHANGELOG = [
+    {
+      version: "2.1",
+      zh: [
+        "打开时有一条进度线。再快，也会慢慢走完。"
+      ],
+      en: [
+        "Opening a text shows a progress line. It fills in one smooth motion, even when the file is quick."
+      ]
+    },
     {
       version: "2.0.1",
       zh: [
@@ -1721,6 +1752,8 @@
   const statusEl = document.getElementById("status");
   const statusText = document.getElementById("status-text");
   const statusAction = document.getElementById("status-action");
+  const loadBarEl = document.getElementById("load-bar");
+  const loadBarFill = document.getElementById("load-bar-fill");
   const scroller = document.getElementById("scroller");
   const reader = document.getElementById("reader");
   const focusLine = document.getElementById("focus-line");
@@ -1770,6 +1803,7 @@
   let openJob = 0;
   let revealToken = 0;
   let opening = null;
+  let loadBar = null;
   let historyItems = [];
   let charLens = [];
   let paragraphTexts = [];
@@ -1963,7 +1997,7 @@
       guideLead: "把一篇文字放进来。页眉、页脚和单独一行的页码会被拿掉，只留下可以长时间读的正文。",
       guideFocus: "文字自己缓慢上移。眼睛停在屏幕中央，靠近上下边缘的句子会慢慢变淡。",
       guideOpenH: "打开",
-      guideOpen: "拖入 PDF、TXT 或 EPUB，或点击页面选择。按 O 也可以。最近读过的会出现在首页，也可以从顶部的历史里再打开。EPUB 打开后，左边可以选择章节。",
+      guideOpen: "拖入 PDF、TXT 或 EPUB，或点击页面选择。按 O 也可以。整理时下面有一条线，再快也会慢慢走完。最近读过的会出现在首页，也可以从顶部的历史里再打开。EPUB 打开后，左边可以选择章节。",
       keysH: "键盘",
       keySpace: "暂停或继续",
       keyUp: "上一段，下一段",
@@ -2056,6 +2090,7 @@
       themeDark: "深色模式",
       themeLight: "浅色模式",
       preparing: "正在整理文字…",
+      loadProgress: "整理进度",
       ready: "整理完成！阅读器即将打开。",
       pageProgress: "正在整理第 {i} / {n} 页…",
       needFile: "请打开 PDF、TXT 或 EPUB 文件",
@@ -2083,7 +2118,7 @@
       guideLead: "Bring in a piece of writing. Headers, footers, and page numbers on a line of their own are taken away.",
       guideFocus: "The words drift slowly upward. Your eyes stay at the center, and lines near the edges fade.",
       guideOpenH: "Open",
-      guideOpen: "Drop a PDF, TXT, or EPUB, or click to choose. O does the same. Recent texts stay on the first page, and under History at the top. An EPUB opens with its chapters on the left.",
+      guideOpen: "Drop a PDF, TXT, or EPUB, or click to choose. O does the same. A line fills beneath the words while the text is gathered, smoothly even when the file is quick. Recent texts stay on the first page, and under History at the top. An EPUB opens with its chapters on the left.",
       keysH: "Keys",
       keySpace: "Pause or continue",
       keyUp: "Previous paragraph, next paragraph",
@@ -2176,6 +2211,7 @@
       themeDark: "Dark",
       themeLight: "Light",
       preparing: "Gathering the text…",
+      loadProgress: "Preparing",
       ready: "Ready. The reader is about to open.",
       pageProgress: "Gathering page {i} / {n}…",
       needFile: "Open a PDF, TXT, or EPUB file",
@@ -2243,11 +2279,113 @@
   }
 
   function setStatus(message, withAction) {
+    if (withAction) stopLoadBar(false);
     statusText.textContent = message;
     statusAction.hidden = !withAction;
     statusEl.classList.remove("is-leaving", "is-dismissing", "is-swap");
     statusEl.hidden = false;
     landing.hidden = true;
+  }
+
+  /* 进度线自己走完一段缓动。文件再快，也不会一下子跳到尽头。 */
+  function stopLoadBar(resolveFinish) {
+    const bar = loadBar;
+    loadBar = null;
+    if (bar && bar.raf) cancelAnimationFrame(bar.raf);
+    loadBarEl.hidden = true;
+    loadBarFill.style.transform = "scaleX(0)";
+    loadBarEl.setAttribute("aria-valuenow", "0");
+    if (resolveFinish && bar && bar.finish) {
+      const finish = bar.finish;
+      bar.finish = null;
+      finish();
+    }
+  }
+
+  function startLoadBar() {
+    stopLoadBar(true);
+    loadBarEl.hidden = false;
+    loadBarFill.style.transform = "scaleX(0)";
+    loadBarEl.setAttribute("aria-valuenow", "0");
+    const now = performance.now();
+    loadBar = {
+      pos: 0,
+      vel: 0,
+      real: 0,
+      held: 0,
+      done: false,
+      t0: now,
+      last: now,
+      pct: 0,
+      raf: 0,
+      finish: null
+    };
+    loadBar.raf = requestAnimationFrame(stepLoadBar);
+  }
+
+  function noteLoad(ratio) {
+    if (!loadBar || loadBar.done) return;
+    const next = Math.max(0, Math.min(0.96, ratio));
+    if (next > loadBar.real) loadBar.real = next;
+  }
+
+  function finishLoadBar() {
+    if (!loadBar) return Promise.resolve();
+    loadBar.done = true;
+    const bar = loadBar;
+    return new Promise(function (resolve) { bar.finish = resolve; });
+  }
+
+  function stepLoadBar(now) {
+    const bar = loadBar;
+    if (!bar) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const dt = Math.min(0.034, Math.max(0.001, (now - bar.last) / 1000));
+    bar.last = now;
+    const elapsed = (now - bar.t0) / 1000;
+    let target;
+    if (bar.done) {
+      target = 1;
+    } else if (bar.real > 0) {
+      target = Math.min(0.94, Math.max(bar.real, bar.held));
+    } else {
+      target = 0.7 * (1 - Math.exp(-elapsed / 2.6));
+      if (target > bar.held) bar.held = target;
+    }
+    if (reduce) {
+      bar.pos = target;
+      bar.vel = 0;
+    } else {
+      const omega = 5.2;
+      const accel = omega * omega * (target - bar.pos) - 2 * omega * bar.vel;
+      bar.vel += accel * dt;
+      bar.pos += bar.vel * dt;
+      if (bar.pos < 0) {
+        bar.pos = 0;
+        bar.vel = 0;
+      } else if (bar.pos > 1) {
+        bar.pos = 1;
+        bar.vel = 0;
+      }
+    }
+    const shown = Math.max(0, Math.min(1, bar.pos));
+    loadBarFill.style.transform = "scaleX(" + shown.toFixed(4) + ")";
+    const pct = Math.round(shown * 100);
+    if (pct !== bar.pct) {
+      bar.pct = pct;
+      loadBarEl.setAttribute("aria-valuenow", String(pct));
+    }
+    const minMs = reduce ? 180 : 900;
+    const arrived = reduce ? shown >= 1 : shown >= 0.988;
+    if (bar.done && arrived && now - bar.t0 >= minMs) {
+      loadBarFill.style.transform = "scaleX(1)";
+      loadBarEl.setAttribute("aria-valuenow", "100");
+      const finish = bar.finish;
+      loadBar = null;
+      if (finish) finish();
+      return;
+    }
+    bar.raf = requestAnimationFrame(stepLoadBar);
   }
 
   function showLanding() {
@@ -2266,6 +2404,7 @@
     document.title = t("appTitle");
     landing.hidden = false;
     statusEl.hidden = true;
+    stopLoadBar(false);
     scroller.hidden = true;
     focusLine.hidden = true;
     progressEl.hidden = true;
@@ -2785,6 +2924,7 @@
     const paragraphs = [];
     const docIndex = {};
     for (let i = 0; i < docs.length; i++) {
+      noteLoad(0.16 + 0.78 * (i / Math.max(1, docs.length)));
       const doc = docs[i];
       const parsed = htmlBlocks(await zipText(files, doc.key));
       const start = paragraphs.length;
@@ -2802,6 +2942,7 @@
       });
       docIndex[doc.key] = { start: start, anchors: anchors };
     }
+    noteLoad(0.96);
     let toc = [];
     const keys = Object.keys(manifest);
     let navHref = "";
@@ -3175,6 +3316,7 @@
 
     const pageLines = [];
     for (let i = 1; i <= pdf.numPages; i++) {
+      noteLoad(0.18 + 0.76 * ((i - 1) / Math.max(1, pdf.numPages)));
       statusText.textContent = t("pageProgress").replace("{i}", String(i)).replace("{n}", String(pdf.numPages));
       await yieldFrame();
       try {
@@ -3211,6 +3353,7 @@
       }
     }
     pdf.destroy();
+    noteLoad(0.96);
     statusText.textContent = t("preparing");
     await yieldFrame();
     return linesToParagraphs([].concat.apply([], stripRunningMatter(pageLines)));
@@ -3733,6 +3876,9 @@
   function readBuffer(file) {
     return new Promise(function (resolve, reject) {
       const reader = new FileReader();
+      reader.onprogress = function (e) {
+        if (e.lengthComputable && e.total > 0) noteLoad((e.loaded / e.total) * 0.22);
+      };
       reader.onload = function () { resolve(reader.result); };
       reader.onerror = function () { reject(reader.error || new Error("read")); };
       reader.readAsArrayBuffer(file);
@@ -3872,9 +4018,13 @@
     progressEl.hidden = true;
     chrome.hidden = true;
     setStatus(t("preparing"), false);
+    startLoadBar();
 
     bufferPromise.then(function (buffer) {
       if (job !== openJob) return null;
+      return yieldFrame().then(function () { return buffer; });
+    }).then(function (buffer) {
+      if (!buffer || job !== openJob) return null;
       /* getDocument 会把 ArrayBuffer 转交给 Worker，必须先留下一份给历史。 */
       let kept = buffer;
       try { kept = buffer.slice(0); } catch (err) {}
@@ -3892,10 +4042,14 @@
         setStatus(kind === "pdf" ? t("emptyPdf") : (kind === "epub" ? t("emptyEpub") : t("emptyTxt")), true);
         return;
       }
-      enterReading(result.paragraphs, result.chapters);
-      saveHistory(state.fileName, kind, result.buffer).then(refreshHistory);
+      return finishLoadBar().then(function () {
+        if (job !== openJob) return;
+        enterReading(result.paragraphs, result.chapters);
+        saveHistory(state.fileName, kind, result.buffer).then(refreshHistory);
+      });
     }).catch(function (err) {
       if (job !== openJob) return;
+      stopLoadBar(false);
       state.mode = "landing";
       state.kind = "";
       state.chapters = [];
