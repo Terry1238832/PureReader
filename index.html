@@ -237,7 +237,6 @@
 
   #history,
   #bookmarks,
-  #chapters,
   #notes {
     position: fixed;
     z-index: 8;
@@ -333,15 +332,36 @@
   .import-actions button { font-size: 13px; opacity: 0.62; }
   .import-actions button:hover,
   .import-actions button:focus-visible { opacity: 1; }
-  #chapters { left: 28px; right: auto; width: min(240px, calc(100% - 40px)); }
-  #chapter-panel {
-    max-height: min(70vh, 640px);
-    overflow: auto;
-    padding: 6px 0;
-    background: color-mix(in srgb, var(--bg) 96%, transparent);
+  #chapters {
+    position: fixed;
+    z-index: 10;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(280px, 86vw);
+    display: flex;
+    flex-direction: column;
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 16px 40px color-mix(in srgb, var(--fg) 6%, transparent);
+    box-shadow: 16px 0 40px color-mix(in srgb, var(--fg) 5%, transparent);
+    transform: translateX(-100%);
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0.42s;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
+  }
+  #chapters.is-open {
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+    transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s;
+  }
+  #chapter-panel {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 22px 0 28px;
     scrollbar-width: none;
   }
   #chapter-panel::-webkit-scrollbar { display: none; width: 0; height: 0; }
@@ -393,7 +413,6 @@
   #chapter-end button:focus-visible { opacity: 1; }
   #history.is-open,
   #bookmarks.is-open,
-  #chapters.is-open,
   #notes.is-open {
     opacity: 1;
     visibility: visible;
@@ -1280,7 +1299,24 @@
     #guide-panel li { grid-template-columns: 5.4em 1fr; }
     #guide, #changelog { left: 14px; bottom: 42px; width: min(420px, calc(100% - 28px)); }
     #history, #bookmarks, #notes { right: 14px; top: 72px; }
-    #chapters { left: 14px; top: 72px; }
+    #chapters {
+      top: auto;
+      bottom: 0;
+      width: 100%;
+      height: auto;
+      max-height: min(72vh, 640px);
+      border-radius: 16px 16px 0 0;
+      overflow: hidden;
+      transform: translateY(100%);
+      box-shadow: 0 -1px 0 color-mix(in srgb, var(--fg) 14%, transparent);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    #chapters.is-open { transform: translateY(0); }
+    #chapter-panel {
+      flex: none;
+      height: auto;
+      max-height: min(72vh, 640px);
+    }
     #notes { width: min(560px, calc(100% - 28px)); }
     #notes-dir { width: 132px; }
     #landing-lang { right: 14px; top: 12px; }
@@ -1292,7 +1328,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     :root { transition: none; }
-    #chrome, #guide, #changelog, #history, #bookmarks, #chapters, #notes, #stats, #status, #load-bar { transition: none; }
+    #chrome, #guide, #changelog, #history, #bookmarks, #chapters, #chapters.is-open, #notes, #stats, #status, #load-bar { transition: none; }
   }
 </style>
 </head>
@@ -1327,7 +1363,7 @@
       <p data-i18n="guideLead">把一篇文字放进来。页眉、页脚和单独一行的页码会被拿掉，只留下可以长时间读的正文。</p>
       <p data-i18n="guideFocus">文字自己缓慢上移。眼睛停在屏幕中央，靠近上下边缘的句子会慢慢变淡。</p>
       <h2 data-i18n="guideOpenH">打开</h2>
-      <p data-i18n="guideOpen">拖入 PDF、TXT 或 EPUB，或点击页面选择。按 O 也可以。整理时下面有一条线，再快也会慢慢走完。最近读过的会出现在首页，也可以从顶部的历史里再打开。EPUB 打开后，左边可以选择章节。</p>
+      <p data-i18n="guideOpen">拖入 PDF、TXT 或 EPUB，或点击页面选择。按 O 也可以。整理时下面有一条线，再快也会慢慢走完。最近读过的会出现在首页，也可以从顶部的历史里再打开。EPUB 打开后，章节从左边滑出。手机上从下面升起。</p>
       <h2 data-i18n="keysH">键盘</h2>
       <ul>
         <li><span>空格</span><span data-i18n="keySpace">暂停或继续</span></li>
@@ -1345,7 +1381,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 和 EPUB 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.1</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.1.1</span></button></p>
     </div>
   </div>
 
@@ -1525,8 +1561,17 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "2.1";
+  const VERSION = "2.1.1";
   const CHANGELOG = [
+    {
+      version: "2.1.1",
+      zh: [
+        "章节从左边滑出。手机上从下面升起。"
+      ],
+      en: [
+        "Chapters slide in from the left, and rise from the bottom on a phone."
+      ]
+    },
     {
       version: "2.1",
       zh: [
@@ -1997,7 +2042,7 @@
       guideLead: "把一篇文字放进来。页眉、页脚和单独一行的页码会被拿掉，只留下可以长时间读的正文。",
       guideFocus: "文字自己缓慢上移。眼睛停在屏幕中央，靠近上下边缘的句子会慢慢变淡。",
       guideOpenH: "打开",
-      guideOpen: "拖入 PDF、TXT 或 EPUB，或点击页面选择。按 O 也可以。整理时下面有一条线，再快也会慢慢走完。最近读过的会出现在首页，也可以从顶部的历史里再打开。EPUB 打开后，左边可以选择章节。",
+      guideOpen: "拖入 PDF、TXT 或 EPUB，或点击页面选择。按 O 也可以。整理时下面有一条线，再快也会慢慢走完。最近读过的会出现在首页，也可以从顶部的历史里再打开。EPUB 打开后，章节从左边滑出。手机上从下面升起。",
       keysH: "键盘",
       keySpace: "暂停或继续",
       keyUp: "上一段，下一段",
@@ -2118,7 +2163,7 @@
       guideLead: "Bring in a piece of writing. Headers, footers, and page numbers on a line of their own are taken away.",
       guideFocus: "The words drift slowly upward. Your eyes stay at the center, and lines near the edges fade.",
       guideOpenH: "Open",
-      guideOpen: "Drop a PDF, TXT, or EPUB, or click to choose. O does the same. A line fills beneath the words while the text is gathered, smoothly even when the file is quick. Recent texts stay on the first page, and under History at the top. An EPUB opens with its chapters on the left.",
+      guideOpen: "Drop a PDF, TXT, or EPUB, or click to choose. O does the same. A line fills beneath the words while the text is gathered, smoothly even when the file is quick. Recent texts stay on the first page, and under History at the top. In an EPUB, chapters slide in from the left, and rise from the bottom on a phone.",
       keysH: "Keys",
       keySpace: "Pause or continue",
       keyUp: "Previous paragraph, next paragraph",
