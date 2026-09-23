@@ -1243,17 +1243,27 @@
   }
 
   #btn-layout {
+    position: relative;
     flex: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 28px;
+    height: 32px;
     padding: 0;
   }
-  #btn-layout svg { width: 16px; height: 16px; display: block; }
-  #btn-layout .icon-scroll { display: none; }
-  body.is-paging #btn-layout .icon-book { display: none; }
-  body.is-paging #btn-layout .icon-scroll { display: block; }
+  #btn-layout svg {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.4s ease;
+  }
+  #btn-layout .icon-scroll { opacity: 0; }
+  body.is-paging #btn-layout .icon-book { opacity: 0; }
+  body.is-paging #btn-layout .icon-scroll { opacity: 1; }
 
   .chrome-actions {
     display: flex;
@@ -1331,6 +1341,8 @@
   }
   #font-family:hover,
   #font-family:focus-visible { opacity: 1; }
+  #font-family.is-pointed:focus,
+  #font-family.is-pointed:focus-visible { outline: none; }
 
   :focus-visible { outline: 1px solid color-mix(in srgb, var(--fg) 35%, transparent); outline-offset: 3px; }
   input:focus,
@@ -1396,7 +1408,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     :root { transition: none; }
-    #chrome, #guide, #changelog, #history, #bookmarks, #chapters, #chapters.is-open, #notes, #stats, #status, #load-bar { transition: none; }
+    #chrome, #guide, #changelog, #history, #bookmarks, #chapters, #chapters.is-open, #notes, #stats, #status, #load-bar, #btn-layout svg { transition: none; }
   }
 </style>
 </head>
@@ -1450,7 +1462,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 和 EPUB 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.2</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.2.1</span></button></p>
     </div>
   </div>
 
@@ -1653,8 +1665,19 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "2.2";
+  const VERSION = "2.2.1";
   const CHANGELOG = [
+    {
+      version: "2.2.1",
+      zh: [
+        "滚动和翻页互换时，文字会缓缓让开，再缓缓回来。",
+        "选完字体之后，不再留下焦点框。"
+      ],
+      en: [
+        "Switching between scroll and pages eases the text out, then back in.",
+        "Choosing a typeface no longer leaves a focus box."
+      ]
+    },
     {
       version: "2.2",
       zh: ["文件名旁边可以换成翻页。点两侧、方向键或空格翻一页。"],
@@ -1984,6 +2007,7 @@
   let pageGestureTurned = false;
   let pageClickBlock = false;
   let pageClickTimer = 0;
+  let layoutBlend = null;
   let historyItems = [];
   let charLens = [];
   let paragraphTexts = [];
@@ -2585,9 +2609,11 @@
     state.anim = null;
     revealToken += 1;
     opening = null;
+    layoutBlend = null;
     scrollFrac = 0;
     shownPage = -1;
     pageTotal = 1;
+    reader.style.opacity = "";
     reader.style.transform = "";
     focusLine.style.opacity = "";
     progressEl.style.opacity = "";
@@ -3846,7 +3872,7 @@
     if (frac > 1 || frac < -1) frac = 0;
     scrollFrac = frac;
     state.scrollPos = Math.abs(frac) > 0.0005 ? pos : scroller.scrollTop;
-    if (opening) return;
+    if (opening || layoutBlend) return;
     const next = Math.abs(scrollFrac) > 0.0005 ? "translateY(" + (-scrollFrac).toFixed(3) + "px)" : "";
     if (reader.style.transform !== next) reader.style.transform = next;
   }
@@ -3855,7 +3881,7 @@
     if (Math.abs(scrollFrac) > 0.0005) {
       scroller.scrollTop = scroller.scrollTop + scrollFrac;
       scrollFrac = 0;
-      if (!opening) reader.style.transform = "";
+      if (!opening && !layoutBlend) reader.style.transform = "";
     }
     state.scrollPos = scroller.scrollTop;
   }
@@ -3868,6 +3894,12 @@
     if (!state.lastTs) state.lastTs = ts;
     const dt = Math.min(0.05, (ts - state.lastTs) / 1000);
     state.lastTs = ts;
+
+    if (layoutBlend) {
+      stepLayoutBlend(ts);
+      requestAnimationFrame(tick);
+      return;
+    }
 
     if (state.anim && state.anim.kind === "page") {
       const anim = state.anim;
@@ -4102,19 +4134,14 @@
   }
 
   function turnPage(delta) {
-    if (!paging() || state.mode !== "reading" || state.anim) return;
+    if (!paging() || state.mode !== "reading" || state.anim || layoutBlend) return;
     goToPage(currentPage() + delta, true);
   }
 
-  function toggleLayout() {
-    if (state.mode !== "reading") return;
-    const anchor = paging()
-      ? { index: state.active || 0, ratio: 0.45 }
-      : (readingAnchor() || { index: state.active || 0, ratio: 0.45 });
+  function commitLayout(anchor) {
     state.layout = paging() ? "scroll" : "page";
     state.anim = null;
     settleScroll();
-    reader.style.transform = "";
     scrollFrac = 0;
     opening = null;
     persist();
@@ -4132,6 +4159,44 @@
     applyFocus();
     updateProgress();
     rememberScroll();
+  }
+
+  function stepLayoutBlend(now) {
+    const b = layoutBlend;
+    if (!b) return;
+    if (b.phase === "out") {
+      const t = clamp((now - b.t0) / 280, 0, 1);
+      const eased = t * t * (3 - 2 * t);
+      reader.style.opacity = (1 - eased).toFixed(3);
+      reader.style.transform = "translateY(" + (-6 * eased).toFixed(2) + "px)";
+      if (t < 1) return;
+      commitLayout(b.anchor);
+      b.phase = "in";
+      b.t0 = now;
+      reader.style.opacity = "0";
+      reader.style.transform = "translateY(12px)";
+      return;
+    }
+    const t = clamp((now - b.t0) / 640, 0, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
+    reader.style.opacity = eased.toFixed(3);
+    reader.style.transform = "translateY(" + (12 * (1 - eased)).toFixed(2) + "px)";
+    if (t < 1) return;
+    reader.style.opacity = "";
+    reader.style.transform = "";
+    layoutBlend = null;
+  }
+
+  function toggleLayout() {
+    if (state.mode !== "reading" || layoutBlend) return;
+    const anchor = paging()
+      ? { index: state.active || 0, ratio: 0.45 }
+      : (readingAnchor() || { index: state.active || 0, ratio: 0.45 });
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      commitLayout(anchor);
+      return;
+    }
+    layoutBlend = { phase: "out", t0: performance.now(), anchor: anchor };
   }
 
   function pageTarget(node) {
@@ -4487,7 +4552,9 @@
     state.mode = "processing";
     revealToken += 1;
     opening = null;
+    layoutBlend = null;
     scrollFrac = 0;
+    reader.style.opacity = "";
     reader.style.transform = "";
     focusLine.style.opacity = "";
     progressEl.style.opacity = "";
@@ -6599,12 +6666,25 @@
     btnPlay.addEventListener("click", togglePlay);
     document.getElementById("font-dec").addEventListener("click", function () { changeFont(-1); });
     document.getElementById("font-inc").addEventListener("click", function () { changeFont(1); });
+    fontSelect.addEventListener("pointerdown", function () {
+      fontSelect.classList.add("is-pointed");
+    });
+    fontSelect.addEventListener("blur", function () {
+      fontSelect.classList.remove("is-pointed");
+    });
     fontSelect.addEventListener("change", function () {
-      if (!FONTS[fontSelect.value]) return;
-      state.font = fontSelect.value;
-      applyTypography();
-      persist();
-      afterLayoutChange();
+      if (FONTS[fontSelect.value]) {
+        state.font = fontSelect.value;
+        applyTypography();
+        persist();
+        afterLayoutChange();
+      }
+      fontSelect.classList.remove("is-pointed");
+      fontSelect.blur();
+      setTimeout(function () {
+        fontSelect.classList.remove("is-pointed");
+        fontSelect.blur();
+      }, 0);
     });
     btnFull.addEventListener("click", toggleFullscreen);
     document.addEventListener("fullscreenchange", updateFullscreenButton);
