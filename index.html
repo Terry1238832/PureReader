@@ -249,9 +249,9 @@
     transition: opacity 0.28s ease, transform 0.28s ease, visibility 0s linear 0.28s;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
   }
-  #history,
   #bookmarks { width: min(320px, calc(100% - 40px)); }
-  #notes {
+  #notes,
+  #history {
     display: flex;
     align-items: stretch;
     width: min(560px, calc(100% - 40px));
@@ -448,8 +448,6 @@
   #history-panel::-webkit-scrollbar,
   #bookmark-panel::-webkit-scrollbar,
   #notes-panel::-webkit-scrollbar { display: none; width: 0; height: 0; }
-  #history-panel button,
-  #history-panel p,
   #bookmark-add,
   #bookmark-list .bookmark-empty {
     display: block;
@@ -464,12 +462,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  #history-panel button:hover,
-  #history-panel button:focus-visible,
   #bookmark-add:hover,
   #bookmark-add:focus-visible { opacity: 1; }
   .bookmark-head #bookmark-add { width: auto; }
-  #history-panel p,
   #bookmark-list .bookmark-empty { opacity: 0.42; }
 
   .bookmark-row {
@@ -518,7 +513,8 @@
     border-bottom: 1px solid color-mix(in srgb, var(--fg) 28%, transparent);
     font-size: 13px;
   }
-  #notes-dir {
+  #notes-dir,
+  #book-dir {
     width: 168px;
     flex: none;
     display: flex;
@@ -528,21 +524,25 @@
     border-right: 1px solid color-mix(in srgb, var(--fg) 8%, transparent);
     scrollbar-width: none;
   }
-  #notes-dir::-webkit-scrollbar { display: none; width: 0; height: 0; }
-  #notes-dir-bar {
+  #notes-dir::-webkit-scrollbar,
+  #book-dir::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  #notes-dir-bar,
+  #book-dir-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
     padding: 12px 8px 6px 14px;
   }
-  #notes-dir-label {
+  #notes-dir-label,
+  #book-dir-label {
     margin: 0;
     font-size: 12px;
     letter-spacing: 0.12em;
     opacity: 0.48;
   }
-  #notes-add-folder {
+  #notes-add-folder,
+  #book-add-folder {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -550,10 +550,14 @@
     height: 22px;
     opacity: 0.5;
   }
-  #notes-add-folder svg { width: 15px; height: 15px; display: block; }
+  #notes-add-folder svg,
+  #book-add-folder svg { width: 15px; height: 15px; display: block; }
   #notes-add-folder:hover,
-  #notes-add-folder:focus-visible { opacity: 0.9; }
-  #notes-dir-list { padding: 0 0 10px; }
+  #notes-add-folder:focus-visible,
+  #book-add-folder:hover,
+  #book-add-folder:focus-visible { opacity: 0.9; }
+  #notes-dir-list,
+  #book-dir-list { padding: 0 0 10px; }
   .notes-dir-row {
     display: flex;
     align-items: center;
@@ -612,36 +616,44 @@
     color: inherit;
     font-size: 13px;
   }
-  #notes-panel {
+  #notes-panel,
+  #history-panel {
     flex: 1;
     min-width: 0;
     max-height: none;
+    padding: 0;
     background: transparent;
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
-  #notes-bar {
+  #notes-bar,
+  #book-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
     padding: 10px 14px 2px 16px;
   }
-  #notes-title {
+  #notes-title,
+  #book-title {
     margin: 0;
     font-size: 13px;
     letter-spacing: 0.14em;
     opacity: 0.55;
   }
-  #notes-close {
+  #notes-close,
+  #book-close {
     font-size: 12px;
     letter-spacing: 0.08em;
     opacity: 0.4;
   }
   #notes-close:hover,
-  #notes-close:focus-visible { opacity: 0.9; }
-  #notes-search {
+  #notes-close:focus-visible,
+  #book-close:hover,
+  #book-close:focus-visible { opacity: 0.9; }
+  #notes-search,
+  #book-search {
     display: block;
     width: calc(100% - 28px);
     margin: 8px 14px 10px;
@@ -658,20 +670,46 @@
     color: inherit;
   }
   #notes-search:focus,
-  #notes-search:focus-visible { outline: none; box-shadow: none; }
+  #notes-search:focus-visible,
+  #book-search:focus,
+  #book-search:focus-visible { outline: none; box-shadow: none; }
   #notes-search::-webkit-search-decoration,
   #notes-search::-webkit-search-cancel-button,
-  #notes-search::-webkit-search-results-button { display: none; appearance: none; -webkit-appearance: none; }
-  #notes-list {
+  #notes-search::-webkit-search-results-button,
+  #book-search::-webkit-search-decoration,
+  #book-search::-webkit-search-cancel-button,
+  #book-search::-webkit-search-results-button { display: none; appearance: none; -webkit-appearance: none; }
+  #notes-list,
+  #book-list {
     overflow: auto;
     padding: 0 0 12px;
     scrollbar-width: none;
   }
-  #notes-list::-webkit-scrollbar { display: none; width: 0; height: 0; }
-  .notes-empty {
+  #notes-list::-webkit-scrollbar,
+  #book-list::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  .notes-empty,
+  .book-empty {
     margin: 8px 16px 4px;
     opacity: 0.42;
   }
+  .book-row {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 8px 16px;
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.45;
+    opacity: 0.72;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .book-row:hover,
+  .book-row:focus-visible { opacity: 1; }
   .note-folder {
     display: flex;
     align-items: center;
@@ -1099,8 +1137,23 @@
   }
   body.is-paging #reader p { opacity: 1; }
   body.is-paging #focus-line { opacity: 0; }
-  body.is-paging #btn-play,
-  body.is-paging .speed-control { display: none; }
+
+  .scroll-tools {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    max-width: 220px;
+    overflow: hidden;
+    opacity: 1;
+    transition: max-width 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease, margin 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  body.is-page-chrome .scroll-tools {
+    max-width: 0;
+    opacity: 0;
+    margin-left: -20px;
+    margin-right: -20px;
+    pointer-events: none;
+  }
 
   /* 几乎看不见的阅读中心线 */
   #focus-line {
@@ -1374,6 +1427,7 @@
     }
     .chrome-title { flex: 1 1 100%; }
     .chrome-actions { width: 100%; justify-content: space-between; gap: 12px; }
+    body.is-page-chrome .scroll-tools { margin-left: -12px; margin-right: -12px; }
     .width-control { display: none; }
     #guide-panel { padding: 28px 22px 22px; }
     #guide-panel li { grid-template-columns: 5.4em 1fr; }
@@ -1397,8 +1451,8 @@
       height: auto;
       max-height: min(72vh, 640px);
     }
-    #notes { width: min(560px, calc(100% - 28px)); }
-    #notes-dir { width: 132px; }
+    #notes, #history { width: min(560px, calc(100% - 28px)); }
+    #notes-dir, #book-dir { width: 132px; }
     #landing-lang { right: 14px; top: 12px; }
     #guide-link { left: 14px; bottom: 14px; }
     #progress { right: 14px; bottom: 12px; }
@@ -1408,7 +1462,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     :root { transition: none; }
-    #chrome, #guide, #changelog, #history, #bookmarks, #chapters, #chapters.is-open, #notes, #stats, #status, #load-bar, #btn-layout svg { transition: none; }
+    #chrome, #guide, #changelog, #history, #bookmarks, #chapters, #chapters.is-open, #notes, #stats, #status, #load-bar, #btn-layout svg, .scroll-tools { transition: none; }
   }
 </style>
 </head>
@@ -1442,9 +1496,9 @@
       <p id="guide-title" data-i18n="guideTitle">说明</p>
       <p data-i18n="guideLead">把一篇文字放进来。页眉、页脚和单独一行的页码会被拿掉，只留下可以长时间读的正文。</p>
       <p data-i18n="guideFocus">文字自己缓慢上移。眼睛停在屏幕中央，靠近上下边缘的句子会慢慢变淡。</p>
-      <p data-i18n="guidePages">文件名旁边的书，把正文改成一页一页。点两侧，或按方向键、空格。再点旁边的图标，回到向上滚动。</p>
+      <p data-i18n="guidePages">文件名旁边的书，把正文改成一页一页。点两侧，或按方向键、空格。再点旁边的图标，回到向上滚动。翻页时，暂停和速度会缓缓收起。字体菜单的最后一项可以导入字体。</p>
       <h2 data-i18n="guideOpenH">打开</h2>
-      <p data-i18n="guideOpen">拖入 PDF、TXT 或 EPUB，或点击页面选择。按 O 也可以。整理时下面有一条线，再快也会慢慢走完。最近读过的会出现在首页，也可以从顶部的历史里再打开。EPUB 打开后，章节从左边滑出。手机上从下面升起。</p>
+      <p data-i18n="guideOpen">拖入 PDF、TXT 或 EPUB，或点击页面选择。按 O 也可以。整理时下面有一条线，再快也会慢慢走完。最近读过的会出现在首页，也可以从顶部的书籍里再打开。书可以放进文件夹。EPUB 打开后，章节从左边滑出。手机上从下面升起。</p>
       <h2 data-i18n="keysH">键盘</h2>
       <ul>
         <li><span>空格</span><span data-i18n="keySpace">暂停或继续</span></li>
@@ -1462,7 +1516,7 @@
       <p data-i18n="guideFiles">文字只留在这台浏览器里，不会上传。最近打开的文件可以再打开。刷新后会记住速度、字号、字体、宽度，以及阅读位置。</p>
       <p data-i18n="guidePdf">整理 PDF 时会从网络加载解析组件。TXT 和 EPUB 不需要网络。</p>
       <p id="guide-author" data-i18n="author">作者　Terry</p>
-      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.2.1</span></button></p>
+      <p id="guide-version"><button type="button" id="version-link"><span data-i18n="versionLabel">版本</span>　<span id="app-version">2.3</span></button></p>
     </div>
   </div>
 
@@ -1524,22 +1578,24 @@
     </div>
     <div class="chrome-actions">
       <button type="button" id="btn-open" data-i18n="open">打开</button>
-      <button type="button" id="btn-history" data-i18n="history">历史</button>
+        <button type="button" id="btn-history" data-i18n="history">书籍</button>
       <button type="button" id="btn-bookmarks" data-i18n="bookmarks">书签</button>
       <button type="button" id="btn-chapters" data-i18n="chapters" hidden>章节</button>
-      <button type="button" id="btn-play" class="is-paused" data-i18n-aria="pause" aria-label="暂停">
-        <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M8 5.5v13M16 5.5v13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
-        </svg>
-        <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M8.5 6.2v11.6L17.8 12z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"></path>
-        </svg>
-      </button>
-      <label class="slider speed-control">
-        <span data-i18n="slow">慢</span>
-        <input id="speed" type="range" min="5" max="80" step="1" value="22" data-i18n-aria="speedLabel" aria-label="滚动速度">
-        <span data-i18n="fast">快</span>
-      </label>
+      <span class="scroll-tools">
+        <button type="button" id="btn-play" class="is-paused" data-i18n-aria="pause" aria-label="暂停">
+          <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 5.5v13M16 5.5v13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
+          </svg>
+          <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8.5 6.2v11.6L17.8 12z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"></path>
+          </svg>
+        </button>
+        <label class="slider speed-control">
+          <span data-i18n="slow">慢</span>
+          <input id="speed" type="range" min="5" max="80" step="1" value="22" data-i18n-aria="speedLabel" aria-label="滚动速度">
+          <span data-i18n="fast">快</span>
+        </label>
+      </span>
       <span class="type-size">
         <button type="button" id="font-dec" data-i18n-aria="smaller" aria-label="减小字号">A−</button>
         <button type="button" id="font-inc" data-i18n-aria="larger" aria-label="增大字号">A+</button>
@@ -1549,6 +1605,7 @@
         <option value="hei" data-i18n="fontHei">黑体</option>
         <option value="kai" data-i18n="fontKai">楷体</option>
         <option value="georgia" data-i18n="fontGeorgia">Georgia</option>
+        <option value="import" data-i18n="fontImport">导入字体</option>
       </select>
       <label class="slider width-control" data-i18n-title="widthLabel" title="阅读宽度">
         <span data-i18n="wide">宽</span>
@@ -1575,7 +1632,23 @@
   </header>
 
   <div id="history">
-    <div id="history-panel"></div>
+    <aside id="book-dir">
+      <div id="book-dir-bar">
+        <p id="book-dir-label" data-i18n="notesFolders">文件夹</p>
+        <button type="button" id="book-add-folder" data-i18n-aria="notesFolderAdd" aria-label="+文件夹">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5h6l2 2H21v9.5H3V7.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path><path d="M12 12.5v5M9.5 15h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+        </button>
+      </div>
+      <div id="book-dir-list"></div>
+    </aside>
+    <div id="history-panel">
+      <div id="book-bar">
+        <p id="book-title" data-i18n="history">书籍</p>
+        <button type="button" id="book-close" data-i18n="guideClose">关闭</button>
+      </div>
+      <input id="book-search" type="search" data-i18n-placeholder="notesSearch" placeholder="搜索" autocomplete="off" spellcheck="false">
+      <div id="book-list"></div>
+    </div>
   </div>
 
   <div id="chapters">
@@ -1645,6 +1718,7 @@
   </div>
   <input id="file" type="file" accept=".pdf,.txt,.epub,.eupd,.eupb,text/plain,application/pdf,application/epub+zip" hidden>
   <input id="bookmark-file" type="file" accept="application/json,.json" hidden>
+  <input id="font-file" type="file" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" hidden>
 
 <script>
 (function () {
@@ -1665,8 +1739,21 @@
     georgia: 'Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif'
   };
 
-  const VERSION = "2.2.1";
+  const VERSION = "2.3";
   const CHANGELOG = [
+    {
+      version: "2.3",
+      zh: [
+        "翻页时，暂停和速度会缓缓收起。",
+        "可以导入自己的字体。",
+        "历史改成书籍。书可以放进文件夹，和读书笔记一样。"
+      ],
+      en: [
+        "Play and speed ease away when the book turns to pages.",
+        "A typeface can be imported.",
+        "History is now Books. A book can sit in folders, the same way as a note."
+      ]
+    },
     {
       version: "2.2.1",
       zh: [
@@ -2017,6 +2104,11 @@
   let noteHintKind = "";
   let chapterEndHold = -1;
   let noteFolder = "all";
+  let bookFolder = "all";
+  let bookQuery = "";
+  let customFonts = {};
+  const CUSTOM_FONT_CAP = 12;
+  const CUSTOM_FONT_BYTES = 10 * 1024 * 1024;
   let importPending = null;
   let importMessage = null;
 
@@ -2080,7 +2172,7 @@
       state.store.files = raw.files || {};
       if (raw.speed) state.speed = clamp(Number(raw.speed) || SPEED_DEFAULT, SPEED_MIN, SPEED_MAX);
       if (raw.fontSize) state.fontSize = clamp(Number(raw.fontSize) || state.fontSize, FONT_MIN, FONT_MAX);
-      if (raw.font && FONTS[raw.font]) state.font = raw.font;
+      if (raw.font && (FONTS[raw.font] || String(raw.font).indexOf("custom:") === 0)) state.font = raw.font;
       if (raw.lang === "en" || raw.lang === "zh") state.lang = raw.lang;
       if (raw.measure) state.measure = clamp(Number(raw.measure) || MEASURE_DEFAULT, MEASURE_MIN, MEASURE_MAX);
       if (raw.theme === "light" || raw.theme === "dark") state.theme = raw.theme;
@@ -2182,13 +2274,58 @@
     persist();
   }
 
+  function readingFontStack() {
+    if (typeof state.font === "string" && state.font.indexOf("custom:") === 0) {
+      const custom = customFonts[state.font.slice(7)];
+      if (custom && custom.family) return '"' + custom.family + '", serif';
+    }
+    return FONTS[state.font] || FONTS.song;
+  }
+
+  function syncFontSelect() {
+    if (!fontSelect) return;
+    for (let i = 0; i < fontSelect.options.length; i++) {
+      if (fontSelect.options[i].value === state.font) {
+        fontSelect.value = state.font;
+        return;
+      }
+    }
+  }
+
+  function renderFontOptions() {
+    const builtin = [
+      ["song", "fontSong"],
+      ["hei", "fontHei"],
+      ["kai", "fontKai"],
+      ["georgia", "fontGeorgia"]
+    ];
+    fontSelect.replaceChildren();
+    builtin.forEach(function (pair) {
+      const opt = document.createElement("option");
+      opt.value = pair[0];
+      opt.textContent = t(pair[1]);
+      fontSelect.appendChild(opt);
+    });
+    Object.keys(customFonts).forEach(function (id) {
+      const opt = document.createElement("option");
+      opt.value = "custom:" + id;
+      opt.textContent = customFonts[id].name || id;
+      fontSelect.appendChild(opt);
+    });
+    const imported = document.createElement("option");
+    imported.value = "import";
+    imported.textContent = t("fontImport");
+    fontSelect.appendChild(imported);
+    syncFontSelect();
+  }
+
   function applyTypography() {
     document.documentElement.style.setProperty("--font", state.fontSize + "px");
     document.documentElement.style.setProperty("--measure", state.measure + "px");
-    document.documentElement.style.setProperty("--reading-font", FONTS[state.font] || FONTS.song);
+    document.documentElement.style.setProperty("--reading-font", readingFontStack());
     speedInput.value = String(state.speed);
     measureInput.value = String(state.measure);
-    fontSelect.value = FONTS[state.font] ? state.font : "song";
+    syncFontSelect();
     speedInput.title = state.speed + " px/s";
   }
 
@@ -2204,9 +2341,9 @@
       guide: "说明",
       guideLead: "把一篇文字放进来。页眉、页脚和单独一行的页码会被拿掉，只留下可以长时间读的正文。",
       guideFocus: "文字自己缓慢上移。眼睛停在屏幕中央，靠近上下边缘的句子会慢慢变淡。",
-      guidePages: "文件名旁边的书，把正文改成一页一页。点两侧，或按方向键、空格。再点旁边的图标，回到向上滚动。",
+      guidePages: "文件名旁边的书，把正文改成一页一页。点两侧，或按方向键、空格。再点旁边的图标，回到向上滚动。翻页时，暂停和速度会缓缓收起。字体菜单的最后一项可以导入字体。",
       guideOpenH: "打开",
-      guideOpen: "拖入 PDF、TXT 或 EPUB，或点击页面选择。按 O 也可以。整理时下面有一条线，再快也会慢慢走完。最近读过的会出现在首页，也可以从顶部的历史里再打开。EPUB 打开后，章节从左边滑出。手机上从下面升起。",
+      guideOpen: "拖入 PDF、TXT 或 EPUB，或点击页面选择。按 O 也可以。整理时下面有一条线，再快也会慢慢走完。最近读过的会出现在首页，也可以从顶部的书籍里再打开。书可以放进文件夹。EPUB 打开后，章节从左边滑出。手机上从下面升起。",
       keysH: "键盘",
       keySpace: "暂停或继续",
       keyUp: "上一段，下一段",
@@ -2225,8 +2362,11 @@
       versionLabel: "版本",
       changelogTitle: "更新日志",
       open: "打开",
-      history: "历史",
-      historyEmpty: "还没有打开过",
+      history: "书籍",
+      historyEmpty: "还没有书。",
+      fontImport: "导入字体",
+      fontTooBig: "这个字体太大了。",
+      fontBad: "这个字体打不开。",
       bookmarks: "书签",
       chapters: "章节",
       bookmarkAdd: "添加",
@@ -2328,9 +2468,9 @@
       guide: "Guide",
       guideLead: "Bring in a piece of writing. Headers, footers, and page numbers on a line of their own are taken away.",
       guideFocus: "The words drift slowly upward. Your eyes stay at the center, and lines near the edges fade.",
-      guidePages: "The book beside the name turns the text into pages. Click either side, or press the arrow keys or Space. The other icon returns to the upward scroll.",
+      guidePages: "The book beside the name turns the text into pages. Click either side, or press the arrow keys or Space. The other icon returns to the upward scroll. Play and speed ease away on pages. The last item in the typeface menu imports a font.",
       guideOpenH: "Open",
-      guideOpen: "Drop a PDF, TXT, or EPUB, or click to choose. O does the same. A line fills beneath the words while the text is gathered, smoothly even when the file is quick. Recent texts stay on the first page, and under History at the top. In an EPUB, chapters slide in from the left, and rise from the bottom on a phone.",
+      guideOpen: "Drop a PDF, TXT, or EPUB, or click to choose. O does the same. A line fills beneath the words while the text is gathered, smoothly even when the file is quick. Recent texts stay on the first page, and under Books at the top. A book can sit in a folder. In an EPUB, chapters slide in from the left, and rise from the bottom on a phone.",
       keysH: "Keys",
       keySpace: "Pause or continue",
       keyUp: "Previous paragraph, next paragraph",
@@ -2349,8 +2489,11 @@
       versionLabel: "Version",
       changelogTitle: "Changelog",
       open: "Open",
-      history: "History",
-      historyEmpty: "Nothing opened yet",
+      history: "Books",
+      historyEmpty: "No books yet.",
+      fontImport: "Import font",
+      fontTooBig: "This font is too large.",
+      fontBad: "This font can't be opened.",
       bookmarks: "Bookmarks",
       chapters: "Chapters",
       bookmarkAdd: "Add",
@@ -2468,6 +2611,9 @@
     document.getElementById("app-version").textContent = VERSION;
     const notesSearch = document.getElementById("notes-search");
     if (notesSearch) notesSearch.placeholder = t("notesSearch");
+    const bookSearch = document.getElementById("book-search");
+    if (bookSearch) bookSearch.placeholder = t("notesSearch");
+    renderFontOptions();
     renderChangelog();
     if (state.mode !== "reading") document.title = t("appTitle");
     updatePlayButton();
@@ -4045,6 +4191,7 @@
   function applyLayoutClass() {
     const on = paging();
     document.body.classList.toggle("is-paging", on);
+    if (!layoutBlend) document.body.classList.toggle("is-page-chrome", on);
     if (on) layoutPageBox();
     const btn = document.getElementById("btn-layout");
     if (btn) btn.setAttribute("aria-label", on ? t("layoutScroll") : t("layoutPage"));
@@ -4192,10 +4339,12 @@
     const anchor = paging()
       ? { index: state.active || 0, ratio: 0.45 }
       : (readingAnchor() || { index: state.active || 0, ratio: 0.45 });
+    const toPage = !paging();
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       commitLayout(anchor);
       return;
     }
+    document.body.classList.toggle("is-page-chrome", toPage);
     layoutBlend = { phase: "out", t0: performance.now(), anchor: anchor };
   }
 
@@ -4432,9 +4581,11 @@
 
   function historyDb() {
     return new Promise(function (resolve, reject) {
-      const req = indexedDB.open("purereader.history", 1);
+      const req = indexedDB.open("purereader.history", 2);
       req.onupgradeneeded = function () {
-        if (!req.result.objectStoreNames.contains("files")) req.result.createObjectStore("files", { keyPath: "name" });
+        const db = req.result;
+        if (!db.objectStoreNames.contains("files")) db.createObjectStore("files", { keyPath: "name" });
+        if (!db.objectStoreNames.contains("fonts")) db.createObjectStore("fonts", { keyPath: "id" });
       };
       req.onsuccess = function () { resolve(req.result); };
       req.onerror = function () { reject(req.error); };
@@ -4454,6 +4605,19 @@
     });
   }
 
+  function libraryEntry() {
+    if (!state.store.library || !Array.isArray(state.store.library.folders)) {
+      state.store.library = { folders: [] };
+    }
+    return state.store.library;
+  }
+
+  function chosenBookFolder() {
+    if (!historyOpen()) return "";
+    if (bookFolder && bookFolder !== "all" && bookFolder !== "loose") return bookFolder;
+    return "";
+  }
+
   function saveHistory(name, kind, buffer) {
     let copy;
     try {
@@ -4465,7 +4629,18 @@
     return historyDb().then(function (db) {
       return new Promise(function (resolve) {
         const tx = db.transaction("files", "readwrite");
-        tx.objectStore("files").put({ name: name, kind: kind, buffer: copy, at: Date.now() });
+        const store = tx.objectStore("files");
+        const get = store.get(name);
+        get.onsuccess = function () {
+          const prev = get.result || {};
+          store.put({
+            name: name,
+            kind: kind,
+            buffer: copy,
+            at: Date.now(),
+            folderId: prev.name ? (prev.folderId || "") : chosenBookFolder()
+          });
+        };
         tx.oncomplete = function () { resolve(); };
         tx.onerror = function () { resolve(); };
       });
@@ -4510,20 +4685,351 @@
 
   function renderHistory() {
     const landingList = document.getElementById("landing-history");
-    const panel = document.getElementById("history-panel");
     landingList.replaceChildren();
-    panel.replaceChildren();
-    if (!historyItems.length) {
-      landingList.hidden = true;
+    if (!historyItems.length) landingList.hidden = true;
+    else {
+      landingList.hidden = false;
+      historyItems.forEach(function (item) {
+        landingList.appendChild(historyButton(item));
+      });
+    }
+    renderBooks();
+  }
+
+  function booksInView() {
+    return historyItems.filter(function (item) {
+      const folderId = item.folderId || "";
+      if (bookFolder === "loose") return !folderId;
+      if (bookFolder !== "all") return folderId === bookFolder;
+      return true;
+    });
+  }
+
+  function bookCount(id) {
+    if (id === "all") return historyItems.length;
+    if (id === "loose") return historyItems.filter(function (item) { return !item.folderId; }).length;
+    return historyItems.filter(function (item) { return item.folderId === id; }).length;
+  }
+
+  function renderBookDir() {
+    const list = document.getElementById("book-dir-list");
+    if (!list) return;
+    const entry = libraryEntry();
+    const known = bookFolder === "all" || bookFolder === "loose" || entry.folders.some(function (folder) { return folder.id === bookFolder; });
+    if (!known) bookFolder = "all";
+    list.replaceChildren();
+    const rows = [
+      { id: "all", name: t("notesAll"), depth: 0 },
+      { id: "loose", name: t("notesLoose"), depth: 0 }
+    ];
+    function addFolders(parentId, depth) {
+      entry.folders.forEach(function (folder) {
+        if ((folder.parentId || "") !== (parentId || "")) return;
+        rows.push({ id: folder.id, name: folder.name, folder: true, depth: depth });
+        addFolders(folder.id, depth + 1);
+      });
+    }
+    addFolders("", 0);
+    rows.forEach(function (row) {
+      const wrap = document.createElement("div");
+      wrap.className = "notes-dir-row" + (bookFolder === row.id ? " is-on" : "");
+      wrap.dataset.dropId = row.id;
+      const item = document.createElement("div");
+      item.className = "notes-dir-item" + (row.folder ? " is-folder" : "");
+      item.setAttribute("role", "button");
+      item.tabIndex = 0;
+      item.dataset.id = row.id;
+      item.style.setProperty("--indent", String(row.depth || 0));
+      if (row.folder) item.appendChild(folderGlyph());
+      const label = document.createElement("span");
+      label.className = "notes-dir-name";
+      label.textContent = row.name;
+      item.appendChild(label);
+      const selected = row.folder && bookFolder === row.id;
+      if (!selected) {
+        const count = document.createElement("span");
+        count.className = "notes-dir-count";
+        count.textContent = String(bookCount(row.id));
+        item.appendChild(count);
+      }
+      if (row.folder) {
+        item.addEventListener("pointerdown", function (e) {
+          if (e.target.closest("input")) return;
+          armDrag(e, "book-folder", row.id, row.name);
+        });
+      }
+      item.addEventListener("click", function () {
+        if (dragMoved) {
+          dragMoved = false;
+          return;
+        }
+        if (bookFolder === row.id) return;
+        bookFolder = row.id;
+        renderBooks();
+      });
+      wrap.appendChild(item);
+      if (selected) {
+        const rename = document.createElement("button");
+        rename.type = "button";
+        rename.className = "notes-dir-rename";
+        rename.textContent = t("bookmarkRename");
+        rename.addEventListener("click", function () {
+          beginBookFolderRename(label, { id: row.id, name: row.name });
+        });
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "notes-dir-remove";
+        remove.textContent = t("bookmarkRemove");
+        remove.addEventListener("click", function () { removeBookFolder(row.id); });
+        wrap.append(rename, remove);
+      }
+      list.appendChild(wrap);
+    });
+  }
+
+  function bookRow(item) {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "book-row";
+    row.textContent = item.name;
+    row.title = item.name;
+    row.addEventListener("pointerdown", function (e) {
+      armDrag(e, "book", item.name, item.name);
+    });
+    row.addEventListener("click", function (e) {
+      if (dragMoved) {
+        dragMoved = false;
+        return;
+      }
+      e.stopPropagation();
+      closeHistory();
+      openStored(item.name);
+    });
+    return row;
+  }
+
+  function renderBooks() {
+    const list = document.getElementById("book-list");
+    if (!list) return;
+    renderBookDir();
+    const q = bookQuery.trim().toLowerCase();
+    list.replaceChildren();
+    const visible = booksInView().filter(function (item) {
+      if (!q) return true;
+      return String(item.name || "").toLowerCase().indexOf(q) >= 0;
+    });
+    if (!visible.length) {
       const empty = document.createElement("p");
-      empty.textContent = t("historyEmpty");
-      panel.appendChild(empty);
+      empty.className = "book-empty";
+      if (q) empty.textContent = t("notesNoHit");
+      else if (!historyItems.length) empty.textContent = t("historyEmpty");
+      else empty.textContent = t("notesFolderEmpty");
+      list.appendChild(empty);
       return;
     }
-    landingList.hidden = false;
-    historyItems.forEach(function (item) {
-      landingList.appendChild(historyButton(item));
-      panel.appendChild(historyButton(item));
+    visible.forEach(function (item) { list.appendChild(bookRow(item)); });
+  }
+
+  function addBookFolder() {
+    const entry = libraryEntry();
+    const base = t("notesFolder");
+    const names = entry.folders.map(function (folder) { return folder.name; });
+    let name = base;
+    let n = 2;
+    while (names.indexOf(name) >= 0) {
+      name = base + " " + n;
+      n += 1;
+    }
+    const folder = { id: uid(), name: name };
+    entry.folders.push(folder);
+    bookFolder = folder.id;
+    persist();
+    renderBooks();
+    const label = document.querySelector('#book-dir-list [data-id="' + folder.id + '"] .notes-dir-name');
+    if (label) beginBookFolderRename(label, folder);
+  }
+
+  function renameBookFolder(id, name) {
+    const folder = folderById(libraryEntry(), id);
+    if (!folder) return;
+    folder.name = name.trim() || folder.name;
+    persist();
+    renderBooks();
+  }
+
+  function beginBookFolderRename(label, folder) {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = folder.name;
+    function finish(cancel) {
+      if (input.dataset.done === "1") return;
+      input.dataset.done = "1";
+      if (cancel) renderBooks();
+      else renameBookFolder(folder.id, input.value);
+    }
+    input.addEventListener("keydown", function (e) {
+      e.stopPropagation();
+      if (e.code === "Escape") {
+        e.preventDefault();
+        finish(true);
+      } else if (e.code === "Enter") {
+        e.preventDefault();
+        finish(false);
+      }
+    });
+    input.addEventListener("blur", function () { finish(false); });
+    label.replaceWith(input);
+    input.focus();
+    input.select();
+  }
+
+  function removeBookFolder(id) {
+    const entry = libraryEntry();
+    const folder = folderById(entry, id);
+    const parent = folder && folder.parentId ? folder.parentId : "";
+    entry.folders.forEach(function (item) {
+      if (item.parentId === id) item.parentId = parent;
+    });
+    entry.folders = entry.folders.filter(function (item) { return item.id !== id; });
+    if (bookFolder === id) bookFolder = parent || "all";
+    persist();
+    historyDb().then(function (db) {
+      return new Promise(function (resolve) {
+        const tx = db.transaction("files", "readwrite");
+        const store = tx.objectStore("files");
+        const req = store.getAll();
+        req.onsuccess = function () {
+          (req.result || []).forEach(function (item) {
+            if ((item.folderId || "") === id) {
+              item.folderId = parent;
+              store.put(item);
+            }
+          });
+        };
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { resolve(); };
+      });
+    }).then(refreshHistory).catch(function () { renderBooks(); });
+  }
+
+  function moveBookFolderInto(id, parentId) {
+    if (!id) return;
+    const entry = libraryEntry();
+    const folder = folderById(entry, id);
+    parentId = parentId || "";
+    if (!folder || parentId === id) return;
+    if (parentId && folderHolds(entry, id, parentId)) return;
+    if ((folder.parentId || "") === parentId) return;
+    if (parentId && folderDepth(entry, parentId) >= 5) return;
+    folder.parentId = parentId;
+    persist();
+    renderBooks();
+  }
+
+  function moveBookToFolder(name, folderId) {
+    return historyDb().then(function (db) {
+      return new Promise(function (resolve) {
+        const tx = db.transaction("files", "readwrite");
+        const store = tx.objectStore("files");
+        const get = store.get(name);
+        get.onsuccess = function () {
+          const item = get.result;
+          if (!item) return;
+          item.folderId = folderId || "";
+          store.put(item);
+        };
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { resolve(); };
+      });
+    }).then(refreshHistory).catch(function () {});
+  }
+
+  function isFontFile(file) {
+    return /\.(ttf|otf|woff2?)$/i.test(file.name || "") || /^font\//.test(file.type || "");
+  }
+
+  function fontFamilyId(id) {
+    return "PRFont" + String(id).replace(/[^a-zA-Z0-9]/g, "");
+  }
+
+  function installFontFace(record) {
+    const family = record.family || fontFamilyId(record.id);
+    const face = new FontFace(family, record.buffer);
+    return face.load().then(function (loaded) {
+      document.fonts.add(loaded);
+      customFonts[record.id] = { name: record.name, family: family };
+      return loaded;
+    });
+  }
+
+  function loadCustomFonts() {
+    return historyDb().then(function (db) {
+      if (!db.objectStoreNames.contains("fonts")) return [];
+      return new Promise(function (resolve, reject) {
+        const req = db.transaction("fonts", "readonly").objectStore("fonts").getAll();
+        req.onsuccess = function () { resolve(req.result || []); };
+        req.onerror = function () { reject(req.error); };
+      });
+    }).then(function (items) {
+      return Promise.all((items || []).map(function (item) {
+        return installFontFace(item).catch(function () {});
+      }));
+    }).then(function () {
+      if (typeof state.font === "string" && state.font.indexOf("custom:") === 0 && !customFonts[state.font.slice(7)]) state.font = "song";
+      renderFontOptions();
+      applyTypography();
+    }).catch(function () {});
+  }
+
+  function saveFontRecord(record) {
+    return historyDb().then(function (db) {
+      return new Promise(function (resolve) {
+        const tx = db.transaction("fonts", "readwrite");
+        tx.objectStore("fonts").put(record);
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { resolve(); };
+      });
+    }).then(function () {
+      return historyDb().then(function (db) {
+        return new Promise(function (resolve) {
+          const tx = db.transaction("fonts", "readwrite");
+          const req = tx.objectStore("fonts").getAll();
+          req.onsuccess = function () {
+            const items = (req.result || []).slice().sort(function (a, b) { return (a.at || 0) - (b.at || 0); });
+            items.slice(0, Math.max(0, items.length - CUSTOM_FONT_CAP)).forEach(function (item) {
+              tx.objectStore("fonts").delete(item.id);
+              delete customFonts[item.id];
+              if (state.font === "custom:" + item.id) state.font = "song";
+            });
+          };
+          tx.oncomplete = function () { resolve(); };
+          tx.onerror = function () { resolve(); };
+        });
+      });
+    });
+  }
+
+  function importFontFile(file) {
+    if (!file) return;
+    if (file.size > CUSTOM_FONT_BYTES) {
+      if (state.mode !== "reading") setStatus(t("fontTooBig"), true);
+      return;
+    }
+    const id = uid();
+    const name = String(file.name || "").replace(/\.[^.]+$/, "").slice(0, 32) || t("fontImport");
+    readBuffer(file).then(function (buffer) {
+      const family = fontFamilyId(id);
+      return installFontFace({ id: id, name: name, family: family, buffer: buffer }).then(function () {
+        return saveFontRecord({ id: id, name: name, family: family, buffer: buffer, at: Date.now() });
+      });
+    }).then(function () {
+      state.font = customFonts[id] ? ("custom:" + id) : "song";
+      renderFontOptions();
+      applyTypography();
+      persist();
+      if (state.mode === "reading") afterLayoutChange();
+    }).catch(function () {
+      if (state.mode !== "reading") setStatus(t("fontBad"), true);
     });
   }
 
@@ -4617,6 +5123,10 @@
       return;
     }
     if (!isPdfFile(file) && !isTxtFile(file)) {
+      if (isFontFile(file)) {
+        importFontFile(file);
+        return;
+      }
       setStatus(t("needFile"), true);
       state.mode = "landing";
       return;
@@ -5946,11 +6456,15 @@
     const hit = document.elementFromPoint(x, y);
     const row = hit && hit.closest ? hit.closest(".notes-dir-row") : null;
     if (!row || !press) return null;
+    const books = press.kind === "book" || press.kind === "book-folder";
+    if (books && !row.closest("#book-dir")) return null;
+    if (!books && !row.closest("#notes-dir")) return null;
     const target = row.dataset.dropId || "";
     if (!target || target === "all") return null;
-    if (press.kind === "folder") {
+    if (press.kind === "folder" || press.kind === "book-folder") {
       if (target === press.id) return null;
-      if (target !== "loose" && folderHolds(fileEntry(state.fileName), press.id, target)) return null;
+      const entry = books ? libraryEntry() : fileEntry(state.fileName);
+      if (target !== "loose" && folderHolds(entry, press.id, target)) return null;
     }
     return row;
   }
@@ -5977,6 +6491,8 @@
     if (!row) return;
     const target = row.dataset.dropId === "loose" ? "" : row.dataset.dropId;
     if (press.kind === "folder") moveFolderInto(press.id, target);
+    else if (press.kind === "book-folder") moveBookFolderInto(press.id, target);
+    else if (press.kind === "book") moveBookToFolder(press.id, target);
     else moveNoteToFolder(press.id, target);
   }
 
@@ -6428,6 +6944,8 @@
       return;
     }
     if (historyOpen()) {
+      const typingBook = document.activeElement && document.activeElement.closest && document.activeElement.closest("#history input");
+      if (typingBook) return;
       if (e.code === "Escape") {
         e.preventDefault();
         closeHistory();
@@ -6630,6 +7148,13 @@
     });
     document.getElementById("notes-close").addEventListener("click", closeNotes);
     document.getElementById("notes-add-folder").addEventListener("click", addFolder);
+    document.getElementById("book-close").addEventListener("click", closeHistory);
+    document.getElementById("book-add-folder").addEventListener("click", addBookFolder);
+    document.getElementById("book-search").addEventListener("input", function (e) {
+      bookQuery = e.target.value;
+      renderBooks();
+    });
+    document.getElementById("book-search").addEventListener("keydown", function (e) { e.stopPropagation(); });
     document.getElementById("notes-search").addEventListener("input", function (e) {
       noteQuery = e.target.value;
       renderNotes();
@@ -6673,8 +7198,20 @@
       fontSelect.classList.remove("is-pointed");
     });
     fontSelect.addEventListener("change", function () {
-      if (FONTS[fontSelect.value]) {
-        state.font = fontSelect.value;
+      const value = fontSelect.value;
+      if (value === "import") {
+        syncFontSelect();
+        document.getElementById("font-file").click();
+        fontSelect.classList.remove("is-pointed");
+        fontSelect.blur();
+        setTimeout(function () {
+          fontSelect.classList.remove("is-pointed");
+          fontSelect.blur();
+        }, 0);
+        return;
+      }
+      if (FONTS[value] || value.indexOf("custom:") === 0) {
+        state.font = value;
         applyTypography();
         persist();
         afterLayoutChange();
@@ -6706,6 +7243,12 @@
       fileInput.blur();
       if (files && files.length) handleFiles(files);
     });
+    document.getElementById("font-file").addEventListener("change", function (e) {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = "";
+      fontSelect.classList.remove("is-pointed");
+      if (file) importFontFile(file);
+    });
 
     window.addEventListener("keydown", onKey);
     [
@@ -6721,6 +7264,8 @@
       "btn-full",
       "btn-theme",
       "btn-lang",
+      "book-close",
+      "book-add-folder",
       "landing-lang"
     ].forEach(function (id) { forgetPointerFocus(document.getElementById(id)); });
     window.addEventListener("mousemove", function (e) {
@@ -6858,6 +7403,7 @@
   bind();
   showLanding();
   refreshHistory();
+  loadCustomFonts();
 })();
 </script>
 </body>
